@@ -5,24 +5,25 @@ It can generate prime numbers in a range specified in command line.
 ## Command line arguments
 ```
 Eratosthen usage:
--o, --optimum    <outfiletype> <start> <length> Generates primes using optimized Eratosthen sieve mode. Output file is stored in <outfiletype> format (see below).
--6, --6n1        <outfiletype> <start> <length> Generates primes using 6n1 Eratosthen sieve mode (faster, uses less memory). Output file is stored in <outfiletype> format (see below).
--30, --30nx      <outfiletype> <start> <length> Generates primes using 30nx Eratosthen sieve mode (even more faster, uses less memory than 6n1). Output file is stored in <outfiletype> format (see below).
--s, --simple     <outfiletype> <start> <length> Generates primes using simplest Eratosthen sieve mode. Output file is stored in <outfiletype> format.
--p, --primesfile <filename>                  File with primes to preload, if not specified then default file 'primes - 0-1G.diffvar.bin' is used. File is looked in the same folder with Eratosthen.exe file.
--t, --threads    <threads>                   Use specified number of threads during primes checking. If not specified, single thread used. 
--h, --help                                   Show this help
+-o, --optimum    <outfiletype> <start> <length> Generates primes using optimized Eratosthen sieve mode and store them in a file of <outfiletype> type.
+-6, --6n1        <outfiletype> <start> <length> Generates primes using 6n1 Eratosthen sieve mode (faster, uses less memory).
+-30, --30nx      <outfiletype> <start> <length> Generates primes using 30nx Eratosthen sieve mode (even more faster, uses less memory than 6n1).
+-s, --simple     <outfiletype> <start> <length> Generates primes using simplest Eratosthen sieve mode.
+-p, --primesfile <filename> File with primes to preload, if not specified then default file 'primes - 0-1G.diffvar.bin' is used.
+                            File is looked in the same folder with Eratosthen.exe file.
+-t, --threads    <threads>  Use specified number of threads during primes checking. If not specified, single thread used. 
+-h, --help                  Show this help
 ```
-You should specify one of these options ```-s```, ```-o```, ```-6```, ```-30``` to generate prime numbers. All other switches optional.
-All three arguments of mandatory options must be specified. There are no default values for these options.
+You should specify one of these options ```-s```, ```-o```, ```-6```, ```-30``` to generate prime numbers. All other options optional.
+All three arguments of these options must be specified. There are no default values for them.
 
 ## Prime generating modes
 There are several primes generating modes: simple (```-s```), optimized (```-o```), 6n1 (```-6```) and 30nx (```-30```).
 Eratosthen algorithm itself requires much memory for execution.
-Simple mode is a strainghtforward and simple implementation of Eratosthen algorithm.
+Simple mode is a straightforward and simple implementation of Eratosthen algorithm.
 Optimized mode requires about two times less memory than simple mode because it excludes even numbers from consideration.
-6n1 mode uses fact that any prime number may have only reminaders 1 or 5 when dividing to 6. It does not store numbers that have other reminders. This way it saves memory.
-30nx this is extension of 6n1 mode to divider 30. It uses evven less memory than 6n1 and slightly faster then 6n1.
+6n1 mode uses fact that any prime number may have only reminders either 1 or 5 when dividing by 6. It does not store numbers that have other reminders. This way it saves memory.
+30nx this is extension of 6n1 mode to divider 30. It uses even less memory than 6n1 and slightly faster then 6n1.
 
 ## Output file type
 Generated primes numbers can be stored into 5 different file formats. 
@@ -35,7 +36,7 @@ That allows to make output file much smaller. It becomes especially important is
 - ```bin``` - numbers are stored in binary format. Each prime number in a file takes exacly 8 bytes (long long in C++). To work with this format you probably need to write your code to read this format. This is easy. 
 Please pay attention that some other programming languages and/or platforms may use other sequence of bytes when saving/reading binary integers from file. 
 - ```bindiff``` - idea is the same as .txtdiff but in binary format. Only 2 bytes (short type in C++) instead of 8 are used for saving diff values. It makes bindiff file four times smaller than .bin file.
-- ```bindiffvar``` - main idea is the following: prime numbers usually stay not too far from each other. For even really big numbers (but numbers that fit into C++ long long type) maximum distance between two consequitive primes is always less than 800. 
+- ```bindiffvar``` - main idea is the following: prime numbers usually stay not too far from each other. For even really big numbers (but numbers that fit into C++ long long type) maximum distance between two consequitive primes did not exceed 800 in all checked cases. 
 Is most cases distance is even less than 255. It means that if distance is less than 255 we can code this difference with 1 byte, and only for rare cases when the difference is larger than 255 we can code such value with 2 bytes. 
 In addition to above, distance between two primes numbers is always even. So we can store diff/2 instead of diff. 
 That idea allows us to create even more 'compressed' format of storing such numbers. ```bindiffvar``` format uses 'variable length' coding to store difference between two consequitive primes numbers.
@@ -73,9 +74,11 @@ Erastofen.exe -30 0P 1G                - if you would like to generate primes st
 It is possible to do primes generation in several threads.
 Specify option ```-t``` followed by number of threads you need.
 Number of threads can be between 1 and 24.
-Please note that three threads do not increase speed in three time because of synchronization expenses.
+Please note that N threads do not increase speed in N times because of synchronization expenses.
 
 ```Eratosthen.exe``` uses pre-generated prime numbers for calculation other primes.
 Pre-generated prime numbers are stored in ```primes - 0-1G.diffvar.bin``` file that is used by default.
+Pre-generated prime numbers of 0-1G range allow us to generate other prime numbers from 1G to 1e18.
+
 If you would like to use another file with pre-generated prime numbers you can use option ```-p``` to tell ```Eratosthen.exe``` to read primes from that file.
 
