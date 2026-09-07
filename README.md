@@ -5,9 +5,12 @@ It can generate prime numbers in a range specified in command line.
 ## Command line arguments
 ```
 Eratosthen usage:
--o, --optimum    <outfiletype> <start> <length> Generates primes using optimized Eratosthen sieve mode and store them in a file of <outfiletype> type.
--6, --6n1        <outfiletype> <start> <length> Generates primes using 6n1 Eratosthen sieve mode (faster, uses less memory).
--30, --30nx      <outfiletype> <start> <length> Generates primes using 30nx Eratosthen sieve mode (even more faster, uses less memory than 6n1).
+-o, --optimum    <outfiletype> <start> <length> Generates primes using optimized Eratosthen sieve mode.
+                 Store generates primes in a file of <outfiletype> type.
+-6, --6n1        <outfiletype> <start> <length> Generates primes using 6n1 Eratosthen sieve mode
+                 (faster, uses less memory).
+-30, --30nx      <outfiletype> <start> <length> Generates primes using 30nx Eratosthen sieve mode
+                 (even more faster, uses less memory than 6n1).
 -s, --simple     <outfiletype> <start> <length> Generates primes using simplest Eratosthen sieve mode.
 -p, --primesfile <filename> File with primes to preload, if not specified then default file 'primes - 0-1G.diffvar.bin' is used.
                             File is looked in the same folder with Eratosthen.exe file.
@@ -22,7 +25,8 @@ There are several primes generating modes: simple (```-s```), optimized (```-o``
 Eratosthen algorithm itself requires much memory for execution.
 Simple mode is a straightforward and simple implementation of Eratosthen algorithm.
 Optimized mode requires about two times less memory than simple mode because it excludes even numbers from consideration.
-6n1 mode uses fact that any prime number may have only reminders either 1 or 5 when dividing by 6. It does not store numbers that have other reminders. This way it saves memory.
+6n1 mode uses fact that any prime number may have only reminders either 1 or 5 when dividing by 6. 
+It does not store numbers that have other reminders. This way it saves memory.
 30nx this is extension of 6n1 mode to divider 30. It uses even less memory than 6n1 and slightly faster then 6n1.
 
 ## Output file type
