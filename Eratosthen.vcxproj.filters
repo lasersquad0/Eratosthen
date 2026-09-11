@@ -68,10 +68,10 @@
     <ClInclude Include="CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\src\BuferedFileStream.h">
+    <ClInclude Include="Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="external\utils\include\PrimesFIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
