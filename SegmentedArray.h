@@ -41,13 +41,10 @@ public:
 		m_bits = BitsCount;
 		uint64_t wordsCnt = (BitsCount - 1ULL) / BITS_IN_WORD + 1ULL;
 		arr = (uint64_t*)calloc(wordsCnt, sizeof(uint64_t));
-		//arr = new uint64_t[wordsCnt];
-		//memset(arr, 0, wordsCnt);
 	}
 
 	~MyBitset()
 	{
-		//delete[] arr;
 		free(arr);
 	}
 
@@ -69,8 +66,8 @@ public:
 	} 
 };
 
-// This array historically called segmented array just implements bitset with index shift.
-// It stores values with index m_begin to m_end and stores only (m_end - m_begin) values
+// This array historically called segmented array just implements bitset with shifted index addressing.
+// It stores values having index from m_begin to m_end and stores only (m_end - m_begin) values
 class SegmentedArray
 {
 private:
@@ -79,16 +76,15 @@ private:
 
 	MyBitset* m_data;
 	uint64_t m_begin;
-	//uint64_t m_size;
 	uint64_t m_end;
 
 public:
+	// start and end are in bits here
 	SegmentedArray(uint64_t start, uint64_t end)
 	{
 		assert(end > start);
 		m_data  = new MyBitset(end - start); // length is bits count here
 		m_begin = start;
-		//m_size  = length;
 		m_end   = end;
 	}
 
@@ -112,7 +108,8 @@ public:
 		return m_data->get(index2);
 	}
 
-	uint64_t end() const { return m_end; }
+	uint64_t iend()   const { return m_end;   } // in bits
+	uint64_t ibegin() const { return m_begin; } // in bits
 };
 
 
