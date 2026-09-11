@@ -1,50 +1,41 @@
 
-//#include <iostream>
+
+#include <iostream>
 #include <cassert>
-//#include <chrono>
+#include <chrono>
 //#include <sstream>
 #include <algorithm>
+#include <windows.h>
+#include <psapi.h>
 #include "Utils.h"
 
 
-size_t var_len_encode(uint8_t buf[9], uint64_t num)
+#pragma comment(lib, "psapi.lib")
+size_t GetMemoryUsage()
 {
-    if (num > UINT64_MAX / 2)
-        return 0;
-
-    size_t i = 0;
-
-    while (num >= 0x80)
+    PROCESS_MEMORY_COUNTERS_EX2 pmc = {};
+    if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
     {
-        buf[i++] = (uint8_t)(num) | 0x80;
-        num >>= 7;
+        return pmc.PrivateUsage;
     }
-
-    buf[i++] = (uint8_t)(num);
-
-    return i;
+    return 0;
 }
 
-size_t var_len_decode(const uint8_t buf[], size_t size_max, uint64_t* num)
+void PrintMemoryUsage()
 {
-    if (size_max == 0)
-        return 0;
-
-    if (size_max > 9)
-        size_max = 9;
-
-    *num = buf[0] & 0x7F;
-    size_t i = 0;
-
-    while (buf[i++] & 0x80)
+    PROCESS_MEMORY_COUNTERS_EX2 pmc = {};
+    if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
     {
-        if (i >= size_max || buf[i] == 0x00)
-            return 0;
-
-        *num |= (uint64_t)(buf[i] & 0x7F) << (i * 7);
+        std::cout << std::endl << "Memory Usage" << std::endl;
+        std::cout << "PrivateUsage         : " << pmc.PrivateUsage << std::endl;
+        std::cout << "PrivateWorkingSetSize: " << pmc.PrivateWorkingSetSize << std::endl;
+        std::cout << "WorkingSetSize       : " << pmc.WorkingSetSize << std::endl;
+        std::cout << "PeakWorkingSetSize   : " << pmc.PeakWorkingSetSize << std::endl;
+        std::cout << "SharedCommitUsage    : " << pmc.SharedCommitUsage << std::endl;
     }
+    else
+        std::cout << std::endl << "Error getting Memory Usage info" << std::endl;
 
-    return i;
 }
 
 void Trim(std::string& str) // str passed by value here intentionally
@@ -67,18 +58,41 @@ static char mytoupper(int c) // to eliminate compile warning "warning C4244: '='
 
 void TrimAndUpper(std::string& str)
 {
-    // remove any leading and traling spaces, just in case.
-    /*size_t strBegin = str.find_first_not_of(" \t");
-    if (strBegin == std::string::npos) return;
-
-    size_t strEnd = str.find_last_not_of(" \t");
-    assert(strEnd != std::string::npos);
-
-    str.erase(strEnd + 1/*, str.size() - strEnd*//*);
-    str.erase(0, strBegin);*/
-
     Trim(str);
 
     // to uppercase
     transform(str.begin(), str.end(), str.begin(), ::mytoupper);
 }
+
+void PrintTime(const std::string& msg)
+{
+    std::cout << GetCurrDateTimeAsString();
+    std::cout << ' ' << msg << std::endl;
+}
+
+struct tm time_t_to_tm(const time_t t)
+{
+    struct tm ttm;
+    localtime_s(&ttm, &t);
+    return ttm;
+}
+
+struct tm GetCurrDateTime()
+{
+    const std::time_t tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    return time_t_to_tm(tt);
+}
+
+#define DATETIME_BUF 100
+
+// retrieves current datetime as string
+std::string GetCurrDateTimeAsString(void)
+{
+    struct tm t = GetCurrDateTime();
+    char ss[DATETIME_BUF];
+    std::strftime(ss, DATETIME_BUF, "%c", &t);
+
+    return ss;
+}
+
+
