@@ -1,6 +1,7 @@
 
 #include <string>
 #include <cassert>
+#include <algorithm>
 #include "BuferedFileStream.h"
 #include "PrimesFIO.h"
 
@@ -170,7 +171,6 @@ size_t PrimesFIO::BypassBINDiff(size_t bypassCount, uint64_t& lastPrime, fstream
 	return cnt;
 }
 
-
 void PrimesFIO::SaveAsTXT(uint64_t* arr, size_t len, fstream& f)
 {
 	uint32_t chunk = 10'000'000;
@@ -188,7 +188,7 @@ void PrimesFIO::SaveAsTXT(uint64_t* arr, size_t len, fstream& f)
 		{
 			f.write(s.c_str(), s.length());
 			// f.flush();
-			s.clear(); // очищаем строку но оставляем capacity
+			s.clear(); // make string empty leaving capacity as is
 		}
 	}
 
@@ -220,7 +220,7 @@ void PrimesFIO::SaveAsTXTDiff(uint64_t* arr, size_t len, uint64_t& lastPrime, ui
 		{
 			f.write(s.c_str(), s.length());
 			// f.flush();
-			s.clear(); // очищаем строку но оставляем capacity
+			s.clear(); // make string empty leaving capacity as is
 		}
 	}
 
@@ -252,7 +252,7 @@ void PrimesFIO::SaveAsBINDiff(uint64_t* arr, size_t len, uint64_t& lastPrime, ui
 		}
 		else
 		{
-			uint16_t diff = (uint16_t)(arr[i] - lastPrime); // diff должен вместиться в 2байта
+			uint16_t diff = (uint16_t)(arr[i] - lastPrime); // diff should fit into 2 bytes
 			if (maxDiff < diff) maxDiff = diff;
 
 			f.write((char*)&diff, sizeof(uint16_t));
@@ -291,7 +291,6 @@ void PrimesFIO::SaveAsBINDiffVar(uint64_t* arr, size_t len, uint64_t& lastPrime,
 	f.flush();
 }
 
-
 size_t PrimesFIO::LoadFromBINDiffVar(uint64_t* arr, size_t len, uint64_t& lastPrime, IBuferedFileStream& bf)
 {
 	uint64_t diff;
@@ -314,6 +313,7 @@ size_t PrimesFIO::LoadFromBINDiffVar(uint64_t* arr, size_t len, uint64_t& lastPr
 		if (bf.Eof()) break;
 
 		size_t res = var_len_decode(buf, maxSize, &diff);
+		
 		if (lastPrime > 0)
 		{
 			assert(maxSize == 1 || maxSize == 2);
@@ -397,7 +397,7 @@ size_t PrimesFIO::BypassBINDiffVarOLD(uint64_t bypassCount, uint64_t& lastPrime,
 
 		assert(res > 0);
 
-		// здесь нету умножения на 2. старый формат
+		// old format, without multiplication by 2 
 
 		lastPrime = diff + lastPrime;
 		cnt++;
@@ -408,7 +408,7 @@ size_t PrimesFIO::BypassBINDiffVarOLD(uint64_t bypassCount, uint64_t& lastPrime,
 	return cnt;
 }
 
-// ***!!!! старая версия без умножения на 2 !!!! *****
+// ***!!!! OLD version without multiplier by 2 !!!! *****
 size_t PrimesFIO::LoadFromBINDiffVarOLD(uint64_t* arr, size_t len, uint64_t& lastPrime, fstream& f)
 {
 	uint64_t diff;
@@ -440,7 +440,7 @@ size_t PrimesFIO::LoadFromBINDiffVarOLD(uint64_t* arr, size_t len, uint64_t& las
 	return cnt;
 }
 
-size_t PrimesFIO::var_len_encode(uint8_t buf[9], uint64_t num)
+size_t var_len_encode(uint8_t buf[9], uint64_t num)
 {
 	if (num > UINT64_MAX / 2)
 		return 0;
@@ -458,7 +458,7 @@ size_t PrimesFIO::var_len_encode(uint8_t buf[9], uint64_t num)
 	return i;
 }
 
-size_t PrimesFIO::var_len_decode(const uint8_t buf[], size_t size_max, uint64_t* num)
+size_t var_len_decode(const uint8_t buf[], size_t size_max, uint64_t* num)
 {
 	if (size_max == 0)
 		return 0;
@@ -493,3 +493,49 @@ uint64_t PrimesFIO::readJavaLong(fstream& f)
 	return res;
 }
 
+
+static char mytoupper(int c) // to eliminate compile warning "warning C4244: '=': conversion from 'int' to 'char', possible loss of data"
+{
+	return (char)toupper(c);
+}
+
+PRIMES_FILE_FORMAT PrimesFIO::GetFileType(std::string& fileName)
+{
+	std::string fn1 = fileName;
+
+	// make it uppercase
+	std::transform(fn1.begin(), fn1.end(), fn1.begin(), ::mytoupper);
+
+	size_t index1 = fn1.find_last_of('.'); // search for rightmost extension
+
+	if (index1 == std::string::npos) // file has no extension at all
+		return PRIMES_FILE_FORMAT::none;
+
+	string ext1 = fn1.substr(index1 + 1);
+
+	string fn2 = fn1.substr(0, index1); // preparing for searching second rightmost extension (if any)
+	size_t index2 = fn2.find_last_of('.');
+	string ext2 = "";
+	if (index2 != string::npos)
+		ext2 = fn2.substr(index2 + 1);
+
+	if (ext1 == TXT)
+	{
+		if (ext2 == DIFF)
+			return PRIMES_FILE_FORMAT::txtdiff;
+		else
+			return PRIMES_FILE_FORMAT::txt;
+	}
+
+	if (ext1 == BIN)
+	{
+		if (ext2 == DIFF)
+			return PRIMES_FILE_FORMAT::bindiff;
+		else if (ext2 == DIFFVAR)
+			return PRIMES_FILE_FORMAT::bindiffvar;
+		else
+			return PRIMES_FILE_FORMAT::bin;
+	}
+
+	return PRIMES_FILE_FORMAT::none; // extension is not recognized
+}
