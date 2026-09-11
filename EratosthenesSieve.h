@@ -2,12 +2,10 @@
 
 #include <string>
 #include <functional>
-//#include <synchapi.h>
 #include "PrimesFIO.h"
 #include "SegmentedArray.h"
-#include "Parameters.h"
 #include "ProgressPrinter.h"
-//#include "CriticalSection.h"
+
 
 class invalid_cmd_option: public std::invalid_argument
 {
@@ -22,14 +20,14 @@ void FindPrimesThread(EratosthenesSieve* es); // forward declaration
 
 enum class CALC_MODE { none, simple, optimized, n6n1, n30x };
 
-#define STR_TO_CALCMODE(arg) (arg=="S"?CALC_MODE::simple:arg=="O"?CALC_MODE::optimized:arg=="6"?CALC_MODE::n6n1: arg=="30"?CALC_MODE::n30x:CALC_MODE::none)
+#define STR_TO_CALCMODE(arg) ((arg)=="S"?CALC_MODE::simple:(arg)=="O"?CALC_MODE::optimized:(arg)=="6"?CALC_MODE::n6n1:(arg)=="30"?CALC_MODE::n30x:CALC_MODE::none)
 
-class EratosthenesSieve: public ProgressPrinter
+#define CALCMODE_TO_STR(md) ((md)==CALC_MODE::simple?"simple":(md)==CALC_MODE::optimized?"opt":(md)==CALC_MODE::n6n1?"6n1":(md)==CALC_MODE::n30x?"n30x":"unknown")
+
+class EratosthenesSieve: public ConsoleProgressBar //: public ProgressPrinter
 {
 private:
-	friend void FindPrimesThread(EratosthenesSieve* es);
-
-	const std::string fSymbols = "BKMGTP";
+	const std::string FACTOR_SYMBOLS = "BKMGTP";
 	static const uint64_t FACTOR_B  = 1ULL; // B means "bytes", so the factor = 1.
 	static const uint64_t FACTOR_K  = 1'000ULL; // 'kilobytes'
 	static const uint64_t FACTOR_M  = 1'000'000ULL; // 'megabytes'
@@ -43,29 +41,34 @@ private:
 	static const uint64_t MAX_START_P = 18400ULL; // 18400P
 	static const uint64_t MAX_LEN   = 1'000'000'000'000ULL; // 1 terabyte (1T)
 
-	char symFACTORstart = 'G'; // символьное представление Factor для значения m_realStart для формирования имени output файла.
-	char symFACTORlen = 'G'; // символьное представление Factor для значения m_realLength для формирования имени output файла.
+	char m_StartFactorSym = 'G'; // symbol suffix of Factor for m_realStart value. used for making output file name.
+	char m_LengthFactorSym = 'G'; // symbol suffix of Factor for m_realLength value.used for making output file name.
 
-	uint64_t FACTORstart = FACTOR_G; // G по умолчанию по потом перепишется исходя из переданного диапазона.
-	uint64_t FACTORlen = FACTOR_G;
-	PRIMES_FILE_FORMATS OUTPUT_FILE_TYPE; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
+	uint64_t m_StartFactor = FACTOR_G; // default value is G. will be overwriten by actual factor value from requested range.
+	uint64_t m_LengthFactor = FACTOR_G;
+	PRIMES_FILE_FORMAT m_OutputFileType; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
 	
 	CALC_MODE m_mode;
 	uint64_t m_realStart;  
-	uint64_t m_realLength; // Длина промежутка на котором ищем простые
-	std::string m_primesInputFile;
+	uint64_t m_realLength; // range length where we are looking for prime numbers
+	uint64_t m_realEnd; 
+
 	SegmentedArray* m_bitArray;
 	
 	std::atomic_uint m_threadIDs = 0;
 	uint32_t m_readPrimes;
 	uint64_t* m_prldPrimes;
+	std::mutex m_mutex; // to sync printing to std::cout from different threads
 
 	typedef std::pair<uint64_t, uint64_t> rangePair;
-	//typedef CriticalSection SyncType;
 	typedef std::mutex SyncType;
 
 	typedef std::pair<SyncType*, rangePair> rangeItem;
 	std::vector<rangeItem> m_ranges;
+
+private:
+	friend void FindPrimesThread(EratosthenesSieve* es);
+	bool predBIN6n1(std::ostream& stream, uint64_t index);
 
 	void CalculateSimple();
 	void CalculateOptimum();
@@ -73,40 +76,40 @@ private:
 	void Calculate30nx();
 
 	typedef std::function<uint64_t(const uint64_t index)> PrimeFromIndexPred;
+	typedef std::function<bool(std::ostream& stream, uint64_t index)> SavePrimeToStreamPred;
+	typedef std::function<uint64_t(std::ostream& stream)> StartPrimePred;
 
-	uint64_t saveAsTXTSimpleMode(uint64_t START, SegmentedArray *sarr, std::string& outputFilename, bool diffMode);
-	uint64_t saveAsBINSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, bool diffMode);
+	uint64_t saveAsTXT(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred);
+	uint64_t saveAsBIN(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred);
 	uint64_t saveAsBINDiffVarSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
 
-	uint64_t saveAsTXTOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
-	uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
-	uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
-	uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	//uint64_t saveAsTXTOptimumMode(SegmentedArray* sarr, std::string& outputFilename, StartPrimePred startPred, PrimeDiffFromIndexPred pred);
+	//uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	//uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	//uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	//uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
 	uint32_t LoadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
 	uint32_t LoadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
 	void LoadPrimes();
 
-	std::string getOutputFilename();
+	std::string getOutputFilename(CALC_MODE mode);
 	uint64_t parseOption(std::string s, char& symFactor, uint64_t& factor);
 	void checkStartParam(std::string start);
 	void defineRanges();
 	rangeItem* getRange(uint64_t v);
-	void printTime(const std::string& msg);
-	//std::string millisecToStr(long long ms);
 	uint64_t nextPrime();
 	void FindPrimesInThreads(int numThreads);
 
 public:
-	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // это реальные primes откуда стартуем если не передано в параметрах command line
-	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // длина промежутка на котором ищем простые если не передано в параметрах command line
+	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // default start value to calculating primes when is not specified in command line
+	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // length of range to calculate primes if not specified in command line
 
 	//EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, uint64_t start, uint64_t len, const std::string& primesInputFile = Pre_Loaded_Primes_Filename);
 	EratosthenesSieve();
 
-	void parseParams(std::string& mode, std::string& oft, std::string& start, std::string& len);
-	void printUsage();
+	void SetParams(std::string mode, std::string oft, std::string& start, std::string& len);
+	void PrintUsage();
 	void Calculate();
 
 };
