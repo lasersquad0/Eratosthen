@@ -16,12 +16,12 @@ bool CDefaultParser::HandleToken(const cli_string &token)
 {
     if (token == DASH || token == DDASH)
     {
-        m_LastError = _T("No name specified for the option");
+        m_LastError = _T("No name specified for the option.");
         return false;
     }
     else if (token.compare(0, 2, DDASH) == 0)
     {
-        if(m_CommandLine->HasOption(token.substr(2, token.size())))
+        if (m_CommandLine->HasOption(token.substr(2, token.size())))
         {
             m_LastError = _T("Duplicate option has been met: ") + token;
             return false;
@@ -49,14 +49,14 @@ bool CDefaultParser::HandleToken(const cli_string &token)
     }
     else if (m_CurrentOption && m_CurrentOption->HasArgs())
     {
-        if(m_CurrentOption->AcceptsArgs())
+        if (m_CurrentOption->AcceptsArgs())
         {
             m_CurrentOption->AddArg(token);
             UpdateOptionsWithArguments(m_CurrentOption);
         }
         else
         {
-            m_LastError = _T("Too many arguments for: ") + m_CurrentOption->GetNonEmptyName();
+            m_LastError = _T("Too many arguments for option: ") + m_CurrentOption->GetNonEmptyName(true);
             return false;
         }
     }
@@ -64,7 +64,7 @@ bool CDefaultParser::HandleToken(const cli_string &token)
     {
         m_LastError = _T("Unknown argument in command line: ") + token;
         return false;
-		//TODO(Andrei): Handle unknown token
+        //TODO(Andrei): Handle unknown token
     }
 
     return true;
@@ -109,7 +109,7 @@ void CDefaultParser::UpdateOptionsWithArguments(COption *option)
     size_t neededArgs = option->GetNumRequiredArgs();
     size_t availableArgs = option->GetArgs().size();  // actual number of option arguments added at the current moment of time
 
-	//bool argsAvailable = availableArgs >= neededArgs;//TODO shall we exit immediately if argsAvailable==false? no need doing 'for' in this case.
+    //bool argsAvailable = availableArgs >= neededArgs;// TODO shall we exit immediately if argsAvailable==false? no need doing 'for' in this case.
 
     if (availableArgs < neededArgs) return;
 
@@ -233,11 +233,11 @@ bool CDefaultParser::Parse(COptionsList *options, CCommandLine *cmd, _TCHAR *arg
 
 bool CDefaultParser::Parse(COptionsList *options, CCommandLine *cmd, const vector_string_t& args)
 {
-    /*if (args.size() == 0)
+    if (args.size() == 0)
     {
         m_LastError = _T("Empty list of options in command line");
         return false;
-    }*/
+    }
 
     if (options == nullptr)
     {
