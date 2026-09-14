@@ -2,6 +2,8 @@
 
 #include <string>
 
+const uint32_t F_WIDTH = 22;
+
 size_t GetMemoryUsage();
 void PrintMemoryUsage();
 
