@@ -21,17 +21,18 @@ size_t GetMemoryUsage()
     return 0;
 }
 
+
 void PrintMemoryUsage()
 {
     PROCESS_MEMORY_COUNTERS_EX2 pmc = {};
     if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc)))
     {
         std::cout << std::endl << "Memory Usage" << std::endl;
-        std::cout << "PrivateUsage         : " << pmc.PrivateUsage << std::endl;
-        std::cout << "PrivateWorkingSetSize: " << pmc.PrivateWorkingSetSize << std::endl;
-        std::cout << "WorkingSetSize       : " << pmc.WorkingSetSize << std::endl;
-        std::cout << "PeakWorkingSetSize   : " << pmc.PeakWorkingSetSize << std::endl;
-        std::cout << "SharedCommitUsage    : " << pmc.SharedCommitUsage << std::endl;
+        std::cout << std::format("{:<{}}: ", "PrivateUsage", F_WIDTH) << pmc.PrivateUsage << std::endl;
+        std::cout << std::format("{:<{}}: ", "PrivateWorkingSetSize", F_WIDTH) << pmc.PrivateWorkingSetSize << std::endl;
+        std::cout << std::format("{:<{}}: ", "WorkingSetSize", F_WIDTH) << pmc.WorkingSetSize << std::endl;
+        std::cout << std::format("{:<{}}: ", "PeakWorkingSetSize", F_WIDTH) << pmc.PeakWorkingSetSize << std::endl;
+        std::cout << std::format("{:<{}}: ", "SharedCommitUsage", F_WIDTH) << pmc.SharedCommitUsage << std::endl;
     }
     else
         std::cout << std::endl << "Error getting Memory Usage info" << std::endl;
