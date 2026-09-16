@@ -113,7 +113,6 @@ public:
 };
 
 
-// TODO may be we dont need segmented array. Check if it is possible to index and allocate arrays greater than 4G in C++.
 /*class SegmentedArrayOLD
 {
 private:
