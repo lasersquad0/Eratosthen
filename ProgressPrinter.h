@@ -52,11 +52,10 @@ public:
 	{
 		if (progress >= m_current)
 		{
-			//TODO use mutex guard here?
-			m_mutex.lock();
+			std::lock_guard<std::mutex> guard(m_mutex);
+
 			m_cout << "\r" << m_progressStr << (float)(100 * m_current) / (float)m_p100 << "%      ";
 			m_current += m_delta;
-			m_mutex.unlock();
 		}
 	}
 };
@@ -92,6 +91,7 @@ public:
 		m_delta = m_100 / 100;
 		m_current = 0;
 
+		m_cout << std::endl;
 	}
 	void FinishProgress()
 	{
@@ -100,7 +100,6 @@ public:
 		std::cout << std::endl << std::endl;
 	}
 
-	//TODO implement version with mutex sync
 	TProgressResult UpdateProgress(uint32_t prgrs, std::string data = "")
 	{
 		const uint32_t DATA_WIDTH = 20;
