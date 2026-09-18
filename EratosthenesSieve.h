@@ -16,7 +16,8 @@ public:
 };
 
 class EratosthenesSieve;
-void FindPrimesThread(EratosthenesSieve* es); // forward declaration
+typedef std::function<void(uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)> StrikeoutComposedPred;
+void FindPrimesThread(EratosthenesSieve* es, StrikeoutComposedPred predStrikeoutComposed); // forward declaration
 
 enum class CALC_MODE { none, simple, optimized, n6n1, n30x };
 
@@ -52,6 +53,7 @@ private:
 	uint64_t m_realStart;  
 	uint64_t m_realLength; // range length where we are looking for prime numbers
 	uint64_t m_realEnd; 
+	std::atomic_uint m_nextPrimeIndex;
 
 	SegmentedArray* m_bitArray;
 	
@@ -60,20 +62,20 @@ private:
 	uint64_t* m_prldPrimes;
 	std::mutex m_mutex; // to sync printing to std::cout from different threads
 
-	typedef std::pair<uint64_t, uint64_t> rangePair;
+	typedef std::pair<uint64_t, uint64_t> RangePair;
 	typedef std::mutex SyncType;
 
-	typedef std::pair<SyncType*, rangePair> rangeItem;
-	std::vector<rangeItem> m_ranges;
+	typedef std::pair<SyncType*, RangePair> RangeItem;
+	std::vector<RangeItem> m_ranges;
 
 private:
-	friend void FindPrimesThread(EratosthenesSieve* es);
+	friend void FindPrimesThread(EratosthenesSieve* es, StrikeoutComposedPred predStrikeoutComposed);
 	bool predBIN6n1(std::ostream& stream, uint64_t index);
 
-	void CalculateSimple();
-	void CalculateOptimum();
-	void Calculate6n1();
-	void Calculate30nx();
+	void calculateSimple();
+	void calculateOptimum();
+	void calculate6n1();
+	void calculate30nx();
 
 	typedef std::function<uint64_t(const uint64_t index)> PrimeFromIndexPred;
 	typedef std::function<bool(std::ostream& stream, uint64_t index)> SavePrimeToStreamPred;
@@ -88,24 +90,23 @@ private:
 	//uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	//uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
-	//uint32_t LoadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
-	uint32_t LoadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
-	uint32_t LoadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
-	void LoadPrimes();
+	//uint32_t loadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
+	uint32_t loadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
+	uint32_t loadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
+	void loadPrimes();
 
-	std::string getOutputFilename(CALC_MODE mode);
+	std::string getOutputFilename();
 	uint64_t parseOption(std::string s, char& symFactor, uint64_t& factor);
 	void checkStartParam(std::string start);
-	void defineRanges();
-	rangeItem* getRange(uint64_t v);
+	void defineRanges(uint64_t start, uint64_t length);
+	RangeItem* getRange(uint64_t v);
 	uint64_t nextPrime();
-	void FindPrimesInThreads(int numThreads);
+	void FindPrimesInThreads(uint32_t numThreads, StrikeoutComposedPred predIndexFromPrime);
 
 public:
 	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // default start value to calculating primes when is not specified in command line
 	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // length of range to calculate primes if not specified in command line
 
-	//EratosthenesSieve(bool mode, PRIMES_FILE_FORMATS oFileType, uint64_t start, uint64_t len, const std::string& primesInputFile = Pre_Loaded_Primes_Filename);
 	EratosthenesSieve();
 
 	void SetParams(std::string mode, std::string oft, std::string& start, std::string& len);
