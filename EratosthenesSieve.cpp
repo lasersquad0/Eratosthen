@@ -5,14 +5,14 @@
 #include "EratosthenesSieve.h"
 #include "string_utils.h"
 #include "Utils.h"
+#include "Ticks.h"
 #include "Parameters.h"
 #include "PrimesFIO.h" // for var_len_encode and var_len_decode functions
 
 using namespace std;
 
-// these constants used for saving primes in TXT format
+// constant COMMA is used for saving primes in TXT format
 const char* COMMA = ",";
-const uint32_t F_WIDTH = 22;
 const uint32_t PROGRESS_BAR_WIDTH = 70;
 
 // initialize to DEFAULT values
@@ -28,10 +28,10 @@ EratosthenesSieve::EratosthenesSieve(): ConsoleProgressBar(cout, PROGRESS_BAR_WI
     m_prldPrimes = nullptr;
 };
 
-
-string EratosthenesSieve::getOutputFilename(CALC_MODE mode)
+// makes output file name in format: primes - <start>-<length>.<format_ext>
+string EratosthenesSieve::getOutputFilename()
 {
-    string fname = std::format("primes - {}{}-{}{}.{}", m_realStart / m_StartFactor, m_StartFactorSym, m_realLength / m_LengthFactor, m_LengthFactorSym, CALCMODE_TO_STR(mode));
+    string fname = std::format("primes - {}{}-{}{}.{}", m_realStart / m_StartFactor, m_StartFactorSym, m_realLength / m_LengthFactor, m_LengthFactorSym, CALCMODE_TO_STR(m_mode));
     
     switch (m_OutputFileType)
     {
@@ -47,65 +47,55 @@ string EratosthenesSieve::getOutputFilename(CALC_MODE mode)
 
 void EratosthenesSieve::Calculate()
 {
-    cout << format("{:<{}}: ", "Start ", F_WIDTH) << m_realStart << endl;
-    cout << format("{:<{}}: ", "End ",   F_WIDTH) << m_realEnd   << endl;
-    cout << format("{:<{}}: ", "Length ",F_WIDTH) << m_realLength<< endl;
-    cout << format("{:<{}}: ", "Output file format ", F_WIDTH) << FORMAT_TO_STR(m_OutputFileType) << endl;
 
+    cout << format("{:<{}}: ", "Start", F_WIDTH) << m_realStart << endl;
+    cout << format("{:<{}}: ", "End",   F_WIDTH) << m_realEnd   << endl;
+    cout << format("{:<{}}: ", "Length",F_WIDTH) << m_realLength<< endl;
+    cout << format("{:<{}}: ", "Calculation algorithm", F_WIDTH) << CALCMODE_TO_STR(m_mode) << endl;
+    cout << format("{:<{}}: ", "Calculation threads", F_WIDTH) << Parameters::THREADS << endl;
+    cout << format("{:<{}}: ", "Output file format", F_WIDTH) << FORMAT_TO_STR(m_OutputFileType) << endl;
+    cout << format("{:<{}}:'{}'", "Output file name", F_WIDTH, getOutputFilename()) << endl;
     switch (m_mode)
     {
-    case CALC_MODE::simple   : CalculateSimple(); break;
-    case CALC_MODE::optimized: CalculateOptimum();break;
-    case CALC_MODE::n6n1     : Calculate6n1();    break;
-    case CALC_MODE::n30x     : Calculate30nx();   break;
+    case CALC_MODE::simple   : calculateSimple(); break;
+    case CALC_MODE::optimized: calculateOptimum();break;
+    case CALC_MODE::n6n1     : calculate6n1();    break;
+    case CALC_MODE::n30x     : calculate30nx();   break;
     default: throw std::invalid_argument(std::format("Incorrect calc mode: {}", (uint32_t)m_mode).c_str());
     }
 }
 
 #define NO_MORE_PRIMES (-1LL)
 
-//TODO implements only one method, need to add more methods here - 6n1 30nx...
-void FindPrimesThread(EratosthenesSieve* es)
+void FindPrimesThread(EratosthenesSieve* es, StrikeoutComposedPred predStrikeoutComposed)
 {
-    es->m_mutex.lock();
-    uint32_t id = es->m_threadIDs.fetch_add(1);
-    cout << "\rFindPrimesThread#" << id << " BEGIN" << endl;
-    es->m_mutex.unlock();
+    //es->m_mutex.lock();
+    //uint32_t id = es->m_threadIDs.fetch_add(1);
+    //cout << "\rFindPrimesThread#" << id << " BEGIN" << endl;
+    //es->m_mutex.unlock();
 
-    uint64_t NPrime, currPrime, rem, j;
-    //uint64_t len = es->m_bitArray->end();
-    //uint64_t realEnd = es->m_realStart + es->m_realLength;
+    uint64_t NPrime, currPrime, rem;
+    const auto start = es->m_realStart; // AI recommended to have local var here
 
     while ((currPrime = es->nextPrime()) != NO_MORE_PRIMES)
     {
-        //uint64_t currPrime = prldPrimes[i];
-
-        /*uint64_t begin = es->m_realStart % currPrime;
-        if (begin > 0)
-            begin = es->m_realStart - begin + currPrime; // находим первое число внутри диапазона которое делится на currPrime
-        else
-            begin = es->m_realStart;
-
-        if ((begin & 0x01ULL) == 0) begin += currPrime; // четные числа выброшены из массива поэтому берем следующее кратное currPrime, оно будет точно нечетное
-
-        uint64_t j = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс
-        begin = max(begin, j);
-
-        j = (begin - 1) / 2; //нечетное переводим в индекс уплотненного массива
-        */
-
-        NPrime = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс
-        if (NPrime < es->m_realStart)
+        NPrime = currPrime * currPrime; 
+        if (NPrime < start)
         {
-            NPrime = es->m_realStart;
-            rem = es->m_realStart % currPrime;
-            if (rem > 0)
-                NPrime = es->m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+            //NPrime = es->m_realStart;
+            rem = start % currPrime;
+            //if (rem > 0)
+            //    NPrime = es->m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+            NPrime = start + ((currPrime - rem) % currPrime);
 
-            if ((NPrime & 0x01ULL) == 0) NPrime += currPrime; // we do not store even numbers in bit array therefore we take next number for NPrime which is odd  
+            if ( (currPrime != 2) && !(NPrime & 0x01ULL) ) NPrime += currPrime; // we do not store even numbers in bit array therefore we take next number for NPrime which is odd  
         }
 
-        j = (NPrime - 1) / 2;
+        assert( (currPrime == 2) || (NPrime & 0x01ULL) == 1 );
+
+        predStrikeoutComposed(NPrime, currPrime, es);
+
+        /*j = (NPrime - 1) / 2;
         auto range = es->getRange(j);
         if (range != nullptr)
             range->first->lock();
@@ -120,44 +110,45 @@ void FindPrimesThread(EratosthenesSieve* es)
             {
                 range->first->unlock();
                 range = es->getRange(j);
-                if(range != nullptr) // range can be null one time when j becomes bigger than len in this loop.  
+                if(range != nullptr) // range can be null one time when j becomes bigger than m_realEnd in this loop.  
                     range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
             }
-        }
+        }*/
     }
 
-    es->m_mutex.lock();
-    cout << endl << "CheckPrimeThread#" << id << " END"; // << endl;
-    es->m_mutex.unlock();
+    //es->m_mutex.lock();
+    //cout << endl << "\rFindPrimesThread#" << id << " END"; // << endl;
+    //es->m_mutex.unlock();
 }
 
 uint64_t EratosthenesSieve::nextPrime()
 {
-    static atomic_uint index(1); // TODO may be for simple mode we need 0 here
+   // static atomic_uint index(1);
 
-    UpdateProgress(index);
+    UpdateProgress(m_nextPrimeIndex);
 
-    if (index < m_readPrimes)
-        return m_prldPrimes[index.fetch_add(1)];
+    if (m_nextPrimeIndex < m_readPrimes)
+        return m_prldPrimes[m_nextPrimeIndex.fetch_add(1)];
 
     //cout << "\r                                \r"; // cleaning up progress line of text
 
     return NO_MORE_PRIMES;
 }
 
-void EratosthenesSieve::FindPrimesInThreads(int numThreads)
+void EratosthenesSieve::FindPrimesInThreads(uint32_t numThreads, StrikeoutComposedPred predStrikeoutComposed)
 {
     //m_mutex.lock(); // do not run threads untill all threads are created.
     
     vector<thread*> thr;
     for (size_t i = 0; i < numThreads; i++)
     {
-        thread* t = new thread(FindPrimesThread, this);
+        thread* t = new thread(FindPrimesThread, this, predStrikeoutComposed);
         thr.push_back(t);
     }
 
     //m_mutex.unlock();
-
+    
+    // wait until all threads finished
     for (size_t i = 0; i < numThreads; i++)
     {
         thr.at(i)->join();
@@ -169,9 +160,12 @@ void EratosthenesSieve::FindPrimesInThreads(int numThreads)
     }
 }
 
-void EratosthenesSieve::LoadPrimes()
+void EratosthenesSieve::loadPrimes()
 {
-    auto start1 = chrono::high_resolution_clock::now();
+    Ticks::Start("preload");
+    //auto start1 = chrono::high_resolution_clock::now();
+
+    cout << format("{:<{}}:'{}'", "Pre-calc primes file", F_WIDTH, Parameters::PRIMES_FILENAME) << endl;
 
     uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realStart + m_realLength)); // max prime num in a specified range 
     uint64_t numPrimesLessThan = (uint64_t)((double)maxPrimeToLoad / log(maxPrimeToLoad)); // approx number of prime numbers in a range 
@@ -179,7 +173,7 @@ void EratosthenesSieve::LoadPrimes()
     cout << " (this is an approximate number of primes in a range from 2 to " << maxPrimeToLoad << "=sqrt(" << m_realEnd << ") )" << endl;
     //cout << "There are *approximately* " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << " = sqrt(" << m_realStart + m_realLength << ") we need for calculations." << endl;
 
-    // read at least 1000 primes from file because approc formula for numPrimesLessThan does not work well for low numbers
+    // read at least 1000 primes from file because approximate formula for numPrimesLessThan does not work well for low numbers
     uint32_t prldPrimesSize = std::max(1000u, (uint32_t)(numPrimesLessThan * 1.2)); // give extra 20% for primes array size since formular above is not presize
 
     //cout << "Array size for primes to be read from a file: " << prldPrimesSize << endl;
@@ -191,28 +185,28 @@ void EratosthenesSieve::LoadPrimes()
     switch (ft)
     {
     case PRIMES_FILE_FORMAT::bindiffvar: 
-        m_readPrimes = LoadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
     case PRIMES_FILE_FORMAT::txt: 
-        m_readPrimes = LoadPrimesFromTXTFile(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        m_readPrimes = loadPrimesFromTXTFile(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
     default:
-        m_readPrimes = LoadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
     }
 
-    cout << format("{:<{}}:'{}'", "Pre-calc primes file", F_WIDTH, Parameters::PRIMES_FILENAME) << endl;
     cout << format("{:<{}}: ", "Primes actually loaded", F_WIDTH) << m_readPrimes << endl;
     
     if (m_prldPrimes[m_readPrimes - 1] < maxPrimeToLoad) // not enough primes in file, show warning 
         cout << "*WARNING*: There might be not enough primes in a file '" << Parameters::PRIMES_FILENAME << "' for calculation new primes!" << endl;
 
-    auto stop = chrono::high_resolution_clock::now();
-    cout << format("{:<{}}: {}", "Primes load time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    //auto stop = chrono::high_resolution_clock::now();
+    //cout << format("{:<{}}: {}", "Primes load time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    cout << format("{:<{}}: {}", "Primes load time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("preload"))) << endl;
 }
 
 
 //Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
-uint32_t EratosthenesSieve::LoadPrimesFromBINDiffVar(string& filename, uint64_t* primes, size_t len, uint64_t stopPrime)
+uint32_t EratosthenesSieve::loadPrimesFromBINDiffVar(string& filename, uint64_t* primes, size_t len, uint64_t stopPrime)
 {
     fstream f;
     f.exceptions(ifstream::failbit | ifstream::badbit);
@@ -238,11 +232,11 @@ uint32_t EratosthenesSieve::LoadPrimesFromBINDiffVar(string& filename, uint64_t*
 
         if (f.eof()) break;
 
-        size_t res = var_len_decode(buf, maxSize, &diff);
-        UNREFERENCED_PARAMETER(res);
+        [[maybe_unused]] size_t res = var_len_decode(buf, maxSize, &diff);
+        
         assert(res > 0);
 
-        if (lastPrime > 2) diff *= 2; // умножаем на 2 все: кроме первого числа(lastPrime==0), и когда lastPrime==2
+        if (lastPrime > 2) diff *= 2; // multiply by 2 все: кроме первого числа(lastPrime==0), и когда lastPrime==2
 
         primes[cnt] = diff + lastPrime;
         lastPrime = primes[cnt++];
@@ -254,7 +248,7 @@ uint32_t EratosthenesSieve::LoadPrimesFromBINDiffVar(string& filename, uint64_t*
 }
 
 //Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
-uint32_t EratosthenesSieve::LoadPrimesFromTXTFile(string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime)
+uint32_t EratosthenesSieve::loadPrimesFromTXTFile(string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime)
 {
     fstream f;
     f.exceptions(/*ifstream::failbit |*/ ifstream::badbit);
@@ -288,7 +282,7 @@ void EratosthenesSieve::SetParams(string mode, string oft, string& start, string
 
     m_mode = STR_TO_CALCMODE(mode);
     if (m_mode == CALC_MODE::none)
-        throw invalid_argument("Error: Unsupported calculation mode specified.");
+        throw invalid_argument("Unsupported calculation mode specified.");
 
     checkStartParam(start); // generates an exception is anything wrong with start param value
     m_realStart = parseOption(start, m_StartFactorSym, m_StartFactor);
@@ -305,9 +299,12 @@ void EratosthenesSieve::SetParams(string mode, string oft, string& start, string
 
     m_OutputFileType = STR_TO_FORMAT(oft);
     if (m_OutputFileType == PRIMES_FILE_FORMAT::none)
-        throw invalid_argument("Error: Unsupported output file type specified: " + oft);
+        throw invalid_argument("Unsupported output file type specified: " + oft);
 
-    defineRanges();
+    if (!std::filesystem::exists(Parameters::PRIMES_FILENAME))
+        throw std::filesystem::filesystem_error("File with pre-calc primes not found", Parameters::PRIMES_FILENAME, 
+                                                std::make_error_code(std::errc::no_such_file_or_directory));
+
 }
 
 // start param passed by value intentionally
@@ -321,7 +318,7 @@ void EratosthenesSieve::checkStartParam(string start)
 
     char sFactor = start.at(start.length() - 1);
 
-    const string ErrStr = std::format("Error: Start parameter value should be a number with factor symbol at the end (factor symbol is a single letter from list: {}). Current incorrect Start value: {}\n", FACTOR_SYMBOLS, start);
+    const string ErrStr = std::format("Start parameter value should be a number with factor symbol at the end (factor symbol is a single letter from list: {}). Current incorrect Start value: {}\n", FACTOR_SYMBOLS, start);
 
     if (FACTOR_SYMBOLS.find(sFactor) == string::npos)
         // if last sym is a digit then we have no factor (equivalent to having factor B)
@@ -339,7 +336,7 @@ void EratosthenesSieve::checkStartParam(string start)
     }
     catch (...)
     {
-        throw invalid_argument("Error: Start parameter value should be a number: '" + start + "'.\n");
+        throw invalid_argument("Start parameter value should be a number: '" + start + "'.\n");
     }
 
     // used below in switch()
@@ -375,7 +372,7 @@ uint64_t EratosthenesSieve::parseOption(string opt, char& symFactor, uint64_t& f
         if (std::isdigit(sFactor))
             sFactor = 'B';
         else
-            throw invalid_argument("Error: Incorrect command line parameter '" + opt + "'.\n");
+            throw invalid_argument("Incorrect command line parameter '" + opt + "'.\n");
     else
         opt = opt.substr(0, opt.length() - 1); // remove letter G at the end. Or T, or P, or M, or K or B.
     
@@ -386,7 +383,7 @@ uint64_t EratosthenesSieve::parseOption(string opt, char& symFactor, uint64_t& f
     }
     catch (...)
     {
-        throw invalid_argument("Error: Parameter value should be a number: '" + opt + "'.\n");
+        throw invalid_argument("Parameter value should be a number: '" + opt + "'.\n");
     }
 
     uint64_t ffactor = 0;
@@ -399,7 +396,7 @@ uint64_t EratosthenesSieve::parseOption(string opt, char& symFactor, uint64_t& f
     case 'T': ffactor = FACTOR_T; break;
     case 'P': ffactor = FACTOR_P; break;
     default:
-        throw invalid_argument("Error: Param value should be a number with factor (one letter from list: BKMGTP). Factor is incorrect here: '" + opt + "'.\n");
+        throw invalid_argument("Param value should be a number with factor (one letter from list: BKMGTP). Factor is incorrect here: '" + opt + "'.\n");
     }
 
     symFactor = sFactor;
@@ -408,40 +405,37 @@ uint64_t EratosthenesSieve::parseOption(string opt, char& symFactor, uint64_t& f
     return dStart * ffactor;
 }
 
-void EratosthenesSieve::defineRanges()
+void EratosthenesSieve::defineRanges(uint64_t start, uint64_t length)
 {
-    //TODO make define ranges compatible with other calc modes like 6n1 and n30x. Now it compatible with Optimum mode only.
-    //because bit array contains only odd numbers m_realStart must be odd too
-    //if ((m_realStart & 0x01ULL) == 0) m_realStart++; // making m_realStart odd
-    uint64_t START = (m_realStart /* - 1ULL*/) / 2ULL; // Переводим в индекс в уплотненном массиве. Не храним четные элементы так как они делятся на 2 по умолчанию.
-    uint64_t LENGTH = m_realLength / 2ULL; // переводим в индекс
-    int workingThreads = Parameters::THREADS - 1;
+    if (Parameters::THREADS < 2) return; // no threads needed => no ranges needed
 
-    if (workingThreads > 1)
+    uint64_t k = 1;
+    uint64_t rangesCount = Parameters::THREADS * k;
+    uint64_t rangeLen = length / rangesCount;
+
+    //m_ranges.push_back(RangeItem(new SyncType(), RangePair(start, start + rangeLen - 1))); //TODO this needs a call delete somewhere to free memory
+
+    uint64_t currRange = 0; //rangeLen;
+
+    for (size_t i = 0; i < rangesCount - 1; i++)
     {
-        uint64_t k = 1;
-        uint64_t rangesCount = workingThreads * k;
-        uint64_t rangeLen = LENGTH / rangesCount;
-
-        m_ranges.push_back(rangeItem(new SyncType(), rangePair(START, START + rangeLen - 1))); //TODO this needs a call delete somewhere to free memory
-
-        uint64_t currRange = rangeLen;
-
-        for (size_t i = 1; i < rangesCount - 1; i++)
-        {
-            m_ranges.push_back(rangeItem(new SyncType(), rangePair(START + currRange, START + currRange + rangeLen - 1)));
-            currRange += rangeLen;
-        }
-
-        m_ranges.push_back(rangeItem(new SyncType(), rangePair(START + currRange, START + LENGTH - 1)));
+        m_ranges.push_back(RangeItem(new SyncType(), RangePair(start + currRange, start + currRange + rangeLen - 1)));
+        currRange += rangeLen;
     }
+
+    m_ranges.push_back(RangeItem(new SyncType(), RangePair(start + currRange, start + length - 1)));
 }
 
-EratosthenesSieve::rangeItem* EratosthenesSieve::getRange(uint64_t v)
+EratosthenesSieve::RangeItem* EratosthenesSieve::getRange(uint64_t v)
 {
+    assert(v >= m_bitArray->ibegin());
+    
+    if (v >= m_bitArray->iend()) 
+        return nullptr;
+
     for (size_t i = 0; i < m_ranges.size(); i++)
     {
-        rangePair& p = m_ranges[i].second;
+        RangePair& p = m_ranges[i].second;
         if ((v >= p.first) && (v <= p.second))
             return &m_ranges[i];
     }
@@ -452,8 +446,8 @@ EratosthenesSieve::rangeItem* EratosthenesSieve::getRange(uint64_t v)
 // stores bits only for 30N+X numbers which covers all prime numbers. where X is one pf the following remainders 1, 7, 11, 13, 17, 19, 23, 29
 // if current number is 30N+X format then set bit in bit field to mark this number as compound
 // if current number is NOT 30N+X format then do nothing and go to the next number 
-// Calculate30nx works slightly faster than Optimum method AND requires 1.5 times less memory than Optimum
-void EratosthenesSieve::Calculate30nx()
+// calculate30nx works slightly faster than Optimum method AND requires 1.5 times less memory than Optimum
+void EratosthenesSieve::calculate30nx()
 {
     static int BIT_TO_REM[] = { 1, 7, 11, 13, 17, 19, 23, 29 };
 
@@ -472,25 +466,86 @@ void EratosthenesSieve::Calculate30nx()
     const uint64_t START = (m_realStart / 30ull) << 3; // value is in bits
     const uint64_t END   = ((m_realEnd + 29)/30ull) << 3; // value is in bits
 
-    LoadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
+    defineRanges(START, END);
+    m_nextPrimeIndex = 1; // bypass 2
+
+    loadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
 
     //uint8_t* bitArray = (uint8_t*)calloc(LENGTH, sizeof(uint8_t));
     m_bitArray = new SegmentedArray(START, END);
 
-    auto start1 = chrono::high_resolution_clock::now();
-
-    //cout << "Calculation started" << std::endl;
+    //auto start1 = chrono::high_resolution_clock::now();
+    Ticks::Start("n30xCalc");
 
     StartProgress(m_readPrimes);
 
     if (Parameters::THREADS > 1)
     {
-        FindPrimesInThreads(Parameters::THREADS - 1); // waits until all threads are finished
+        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+            {
+                assert(currPrime > 1);
+                assert(NPrime > 1);
+
+                std::lldiv_t divres;
+                uint64_t index = 0;
+ 
+                // we need to lock a range
+                // for that we need to have index in compressed array
+                // if bit =-1 that means composed number that is not stored in array => no index exists in array for that number
+                // we check numbers one-by-one till find first number that has index in array
+                while (NPrime < m_realEnd)
+                {
+                    divres = std::div(NPrime, 30ll);
+                    int bit = REM_TO_BIT[divres.rem];
+
+                    if (bit >= 0)
+                    {
+                        index = (divres.quot << 3) + bit;
+                        break;
+                    }
+                    NPrime += 2 * currPrime;
+                }
+
+                if (NPrime >= m_realEnd) return;
+
+                auto range = getRange(index);
+                if (range != nullptr)
+                    range->first->lock();
+                               
+                m_bitArray->setTrue(index); // set 'composed' to index calculated in loop above
+
+                while (NPrime < m_realEnd)
+                {
+                    divres = std::div(NPrime, 30ll);
+                    //assert(divres.quot >= START);
+                    int bit = REM_TO_BIT[divres.rem];
+
+                    if (bit >= 0)
+                    {
+                        index = (divres.quot << 3) + bit;
+
+                        if (index > range->second.second)
+                        {
+                            range->first->unlock();
+                            range = getRange(index);
+                            if (range != nullptr) // range can be null one time when index becomes bigger than iend() in this loop.  
+                                range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
+                        }
+                        m_bitArray->setTrue(index); 
+                    }
+                    NPrime += 2 * currPrime;  // NPrime + currPrime makes NPrime even. we have to bypass cases when NPrime is even. That is why we do NPrime + 2*currPrime
+                }
+
+                range->first->unlock(); // unlock last range
+            };
+
+        FindPrimesInThreads(Parameters::THREADS, predStrikeoutComposed); // waits until all threads are finished
     }
     else
     {
         std::lldiv_t divres;
-        uint64_t NPrime, rem, currPrime;
+        uint64_t NPrime, currPrime;
+
         for (uint32_t i = 1; i < m_readPrimes; ++i)
         {
             UpdateProgress(i);
@@ -501,15 +556,16 @@ void EratosthenesSieve::Calculate30nx()
             
             if (NPrime < m_realStart)
             {
-                NPrime = m_realStart;
-                rem = m_realStart % currPrime;
-                if (rem > 0)
-                    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                //NPrime = m_realStart;
+                //rem = m_realStart % currPrime;
+                //if (rem > 0)
+                //    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                NPrime = m_realStart + ((currPrime - m_realStart % currPrime) % currPrime);
 
                 if ((NPrime & 0x01ULL) == 0) NPrime += currPrime; // we do not store even numbers in bit array therefore we take next number for NPrime which is odd  
             }
             
-            assert((NPrime & 0x01ULL) != 0);
+            assert((NPrime & 0x01ULL) != 0); // NPrime must be odd here
 
             while (NPrime < m_realEnd)
             {
@@ -531,15 +587,14 @@ void EratosthenesSieve::Calculate30nx()
         }
     }
 
-    if (m_realStart < 2) m_bitArray->setTrue(0);
-    
-   // if (m_realStart == 1) m_bitArray->setTrue(0); 
+    if (m_realStart < 7) m_bitArray->setTrue(0);
 
     FinishProgress();
 
-    auto stop = chrono::high_resolution_clock::now();
-    cout << format("{:<{}}: {}", "Calculations done in", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
-    
+    //auto stop = chrono::high_resolution_clock::now();
+    //cout << format("{:<{}}: {}", "Calculations done in", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    cout << format("{:<{}}: {}", "Calculations done in", F_WIDTH, MillisecToStr<string>(Ticks::Finish("n30xCalc"))) << endl;
+
     ///////////////////////////////////////////////////////////////////////////
 
     uint64_t lastPrime = 0; // kind of global var between predStartTXT and predTXTDiff
@@ -579,14 +634,14 @@ void EratosthenesSieve::Calculate30nx()
             {
                 stream << "2,"; // 2,3 and 5 are not included into calc because they are out of n30x formular, adding them manually here
                 stream << "1,"; // 1 is a diff between 3 and 2
-                stream << "2,"; // 2 is a diff between 5 and 3
+                stream << "1,"; // 2 is a (diff between 5 and 3) / 2
                 lastPrime = 5;
                 cnt += 3;
             }
             else if (m_realStart < 4)
             {
                 stream << "3,";
-                stream << "2,"; // 2 is a diff between 5 and 3
+                stream << "1,"; // 2 is a (diff between 5 and 3) / 2
                 lastPrime = 5;
                 cnt += 2;
             }
@@ -619,13 +674,17 @@ void EratosthenesSieve::Calculate30nx()
             uint64_t prime;
             prime = (index >> 3) * 30 + BIT_TO_REM[index & 0x07];
 
-            assert(/*index == 0 ||*/ (prime > lastPrime));
-            assert((lastPrime == 0) || (prime - lastPrime < MAXUINT16));
+            assert(/*prime == 0 ||*/ (prime > lastPrime));
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if (prime >= m_realStart && prime < m_realEnd)
             {
-                stream << prime - lastPrime << COMMA;
+                if (lastPrime > 2)
+                    stream << (prime - lastPrime) / 2 << COMMA;
+                else
+                    stream << prime - lastPrime << COMMA;
+                //stream << prime - lastPrime << COMMA;
                 lastPrime = prime;
                 return true;
             }
@@ -675,16 +734,18 @@ void EratosthenesSieve::Calculate30nx()
                 stream.write((char*)&lastPrime, sizeof(lastPrime));
                 uint16_t diff = 1; // diff between 2 and 3
                 stream.write((char*)&diff, sizeof(diff));
-                diff = 2; // diff between 3 and 5
+                diff = 1; // (diff between 3 and 5) / 2
                 stream.write((char*)&diff, sizeof(diff));
                 cnt += 3;
+                lastPrime = 5;
             }
             else if (m_realStart < 4)
             {
                 lastPrime = 3;
                 stream.write((char*)&lastPrime, sizeof(lastPrime));
-                uint16_t diff = 2; // diff between 3 and 5
+                uint16_t diff = 1; // (diff between 3 and 5) / 2
                 stream.write((char*)&diff, sizeof(diff));
+                lastPrime = 5;
                 cnt += 2;
             }
             else if (m_realStart < 6)
@@ -716,8 +777,8 @@ void EratosthenesSieve::Calculate30nx()
             uint64_t prime;
             prime = (index >> 3) * 30 + BIT_TO_REM[index & 0x07];
 
-            assert(/*index == 0 ||*/ (prime > lastPrime));
-            assert(/*index == 0 ||*/ (prime - lastPrime < MAXUINT16));
+            assert(/*prime == 0 ||*/ (prime > lastPrime));
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if (prime >= m_realStart && prime < m_realEnd)
@@ -729,6 +790,8 @@ void EratosthenesSieve::Calculate30nx()
                 else
                 {
                     uint16_t diff = (uint16_t)(prime - lastPrime);
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
+                    if (lastPrime > 2) diff /= 2;
                     stream.write((char*)&diff, sizeof(diff));
                 }
 
@@ -782,8 +845,8 @@ void EratosthenesSieve::Calculate30nx()
             uint64_t prime;
             prime = (index >> 3) * 30 + BIT_TO_REM[index & 0x07];
 
-            assert(/*index == 0 ||*/ (prime > lastPrime));
-            assert(/*index == 0 || */ (prime - lastPrime < MAXUINT16));
+            assert(/*prime == 0 ||*/ (prime > lastPrime));
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if ((prime >= m_realStart) && (prime < m_realEnd))
@@ -792,9 +855,9 @@ void EratosthenesSieve::Calculate30nx()
                 uint64_t diff;
 
                 diff = prime - lastPrime; // diff is always even. that is why we can divide it by 2. more values will fit into single byteт.
-                assert((diff & 0x01ULL) == 0ULL); // check that diff is really even
+                assert(lastPrime == 0 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
                 //TODO remove it?? because assert above
-                if (lastPrime > 2) diff /= 2; // bypass diff between 2 and 3 = 1
+                if (lastPrime > 0 /*> 2*/) diff /= 2; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
 
                 size_t len = var_len_encode(buf, diff);
                 stream.write((char*)buf, len);
@@ -878,9 +941,11 @@ void EratosthenesSieve::Calculate30nx()
     {
         cout << "Saving file...";
 
-        auto start2 = chrono::high_resolution_clock::now();
+        //auto start2 = chrono::high_resolution_clock::now();
+        Ticks::Start("save");
+        
         uint64_t primesSaved = 0;
-        string outputFilename = getOutputFilename(CALC_MODE::n30x);
+        string outputFilename = getOutputFilename();
 
         switch (m_OutputFileType)
         {
@@ -893,10 +958,13 @@ void EratosthenesSieve::Calculate30nx()
 
         cout << " Saved." << endl;
 
-        stop = chrono::high_resolution_clock::now();
-        cout << format("{:<{}}: ","Primes saved to file", F_WIDTH) << primesSaved << format(" => '{}'", outputFilename) << endl;
-        cout << format("{:<{}}: {}","File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        cout << format("{:<{}}: {}","Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        //stop = chrono::high_resolution_clock::now();
+        
+        cout << format("{:<{}}: ","Primes saved to file", F_WIDTH) << primesSaved << endl;
+        //cout << format("{:<{}}: {}","File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
+        //cout << format("{:<{}}: {}","Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
+        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("n30xCalc") + Ticks::GetTick("save"))) << endl;
     }
 
     PrintMemoryUsage(); // it should be BEFORE freeing big arrays such as m_prldPrimes and m_bitArray
@@ -908,53 +976,125 @@ void EratosthenesSieve::Calculate30nx()
 // stores bits only for 6n+1 and 6n+5 numbers which covers all prime numbers
 // if current number is 6n+1 or 6n+5 then set bit in bit field to mark this number as compound
 // if current number is NOT 6n+1 or 6n+5 then do nothing and go to the next number 
-// Calculate6n1 works about two times slower than Optimum method BUT requires 1.5 times less memory than Optimum
-void EratosthenesSieve::Calculate6n1()
+// calculate6n1 works about two times slower than Optimum method BUT requires 1.5 times less memory than Optimum
+void EratosthenesSieve::calculate6n1()
 {
     uint64_t START = m_realStart / 3ULL; 
     uint64_t END   = m_realEnd / 3ULL + 1;
 
-  //  cout << format("{:<{}}: ", "Start ", F_WIDTH) << m_realStart << endl;
-  //  cout << format("{:<{}}: ", "Length ", F_WIDTH) << m_realLength << endl;
+    defineRanges(START, END);
+    m_nextPrimeIndex = 1; // bypass prime '2'
 
-    LoadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
+    loadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
 
     m_bitArray = new SegmentedArray(START, END);
 
-    auto start1 = chrono::high_resolution_clock::now();
-
-    //cout << "Calculation started" << std::endl;
+    //auto start1 = chrono::high_resolution_clock::now();
+    Ticks::Start("6n1Calc");
 
     StartProgress(m_readPrimes);
 
     if (Parameters::THREADS > 1)
     {
-        FindPrimesInThreads(Parameters::THREADS); // waits until all threads are finished
+        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+            {
+                std::lldiv_t divres;
+                uint64_t index = 0;
+                bool found = false;
+
+                // we need to lock a range
+                // for that we need to call index in compressed array
+                // divres.rem =0,2,3,4 means composed number that is not stored in array => no index exists in array for that number
+                // we check numbers one-by-one till find first number that has index in array
+                while (NPrime < m_realEnd)
+                {
+                    divres = std::div(NPrime, 6ll);
+                    if (divres.rem == 1)
+                    {
+                        index = (divres.quot << 1);
+                        found = true;
+                        break;
+                    }
+                    else if (divres.rem == 5)
+                    {
+                        index = (divres.quot << 1) + 1;
+                        found = true;
+                        break;
+                    }
+                    NPrime += 2 * currPrime;
+                }
+
+                if (NPrime >= m_realEnd) return;
+
+                // found first NPrime that has an index in m_bitArray
+                // then lock appropriate range
+                assert(found);
+
+                auto range = getRange(index);
+                if (range != nullptr)
+                    range->first->lock();
+
+                m_bitArray->setTrue(index); // setTrue() we can call only after locking the range
+
+                while (NPrime < m_realEnd)
+                {
+                    divres = std::div(NPrime, 6ll);
+                    if (divres.rem == 1)
+                    {
+                        index = (divres.quot << 1);
+                        if (index > range->second.second)
+                        {
+                            range->first->unlock();
+                            range = getRange(index);
+                            if (range != nullptr) // range can be null one time when index becomes bigger than iend() in this loop.  
+                                range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
+                        }
+                        m_bitArray->setTrue(index);
+                    }
+                    else if (divres.rem == 5)
+                    {
+                        index = (divres.quot << 1) + 1;
+                        if (index > range->second.second)
+                        {
+                            range->first->unlock();
+                            range = getRange(index);
+                            if (range != nullptr) // range can be null one time when index becomes bigger than iend() in this loop.  
+                                range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
+                        }
+                        m_bitArray->setTrue(index);
+                    }
+                    NPrime += 2 * currPrime; // NPrime + currPrime makes NPrime even. we have to bypass cases when NPrime is even. That is why we do NPrime + 2*currPrime
+                }
+
+                range->first->unlock(); // unlock last range before taking next prime
+            };
+
+        FindPrimesInThreads(Parameters::THREADS, predStrikeoutComposed); // waits until all threads are finished
     }
     else
     {
-       // uint64_t len = m_bitArray->end();
-        uint64_t NPrime, rem, currPrime;
-        //uint64_t realEnd = m_realStart + m_realLength;
+        uint64_t NPrime, currPrime;
         std::lldiv_t divres;
-        for (uint32_t i = 1; i < m_readPrimes; ++i)  //%%%%% пропускаем число 2 начинаем с 3
+        for (uint32_t i = 1; i < m_readPrimes; ++i)
         {
             UpdateProgress(i);
 
             currPrime = m_prldPrimes[i];
 
-            NPrime = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс
+            NPrime = currPrime * currPrime; // start to strike out composed nums from p^2 because variants like p*3, p*5, p*7 have already visited in previous iterations 
+            
             if (NPrime < m_realStart)
             {
-                NPrime = m_realStart;
-                rem = m_realStart % currPrime;
-                if (rem > 0)
-                    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                //NPrime = m_realStart;
+                //rem = m_realStart % currPrime;
+                //if (rem > 0)
+                //    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                NPrime = m_realStart + ((currPrime - m_realStart % currPrime) % currPrime);
 
                 if ((NPrime & 0x01ULL) == 0) NPrime += currPrime; // we do not store even numbers in bit array therefore we take next number for NPrime which is odd  
             }
 
-            assert((NPrime & 0x01ULL) != 0);
+            assert((NPrime & 0x01ULL) != 0); // NPrime must be odd here
 
             //NPrime must be odd before starting this loop
             while (NPrime < m_realEnd)
@@ -975,12 +1115,14 @@ void EratosthenesSieve::Calculate6n1()
     }
 
     if (m_realStart < 3) m_bitArray->setTrue(0); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
-    //if (m_realStart < 5) m_bitArray->setTrue(1);  // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
-
+    
     FinishProgress();
 
-    auto stop = chrono::high_resolution_clock::now();
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    //auto stop = chrono::high_resolution_clock::now();
+    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("6n1Calc"))) << endl;
+
+    /////////////////////////////////////////////////////////////////////////
 
     uint64_t lastPrime = 0; // kind of global var between predStartTXT and predTXTDiff
 
@@ -1047,11 +1189,16 @@ void EratosthenesSieve::Calculate6n1()
                 prime = (index - 1) * 3 + 5; // index is odd, full formular ((index-1)/2)*6+5
 
             assert(prime > lastPrime);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if (prime >= m_realStart && prime < m_realEnd)
             {
-                stream << prime - lastPrime << COMMA;
+                if (lastPrime > 2)
+                    stream << (prime - lastPrime) / 2 << COMMA;
+                else
+                    stream << prime - lastPrime << COMMA;
+                //stream << prime - lastPrime << COMMA;
                 lastPrime = prime;
                 return true;
             }
@@ -1121,7 +1268,7 @@ void EratosthenesSieve::Calculate6n1()
                 prime = (index - 1) * 3 + 5; // index is odd, full formular ((index-1)/2)*6+5
 
             assert(prime > lastPrime);
-            assert(prime - lastPrime < MAXUINT16);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if (prime >= m_realStart && prime < m_realEnd)
@@ -1133,6 +1280,8 @@ void EratosthenesSieve::Calculate6n1()
                 else
                 {
                     uint16_t diff = (uint16_t)(prime - lastPrime);
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
+                    if (lastPrime > 2) diff /= 2;
                     stream.write((char*)&diff, sizeof(diff));
                 }
 
@@ -1180,7 +1329,7 @@ void EratosthenesSieve::Calculate6n1()
                 prime = (index - 1) * 3 + 5; // index is odd, full formular ((index-1)/2)*6+5
 
             assert(prime > lastPrime);
-            assert(prime - lastPrime < MAXUINT16);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if ((prime >= m_realStart) && (prime < m_realEnd))
@@ -1189,9 +1338,9 @@ void EratosthenesSieve::Calculate6n1()
                 uint64_t diff;
 
                 diff = prime - lastPrime; // diff is always even. that is why we can divide it by 2. more values will fit into single byteт.
-                assert((diff & 0x01ULL) == 0ULL); // check that diff is really even
-                //TODO remove it?? because assert above
-                if (lastPrime > 2) diff /= 2; // bypass diff between 2 and 3 = 1
+                assert(lastPrime == 0 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
+                
+                if (lastPrime > 2) diff /= 2; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
             
                 size_t len = var_len_encode(buf, diff);
                 stream.write((char*)buf, len);
@@ -1206,9 +1355,11 @@ void EratosthenesSieve::Calculate6n1()
     {
         cout << "Saving file...";
 
-        auto start2 = chrono::high_resolution_clock::now();
+        //auto start2 = chrono::high_resolution_clock::now();
+        Ticks::Start("save");
+
         uint64_t primesSaved = 0;
-        string outputFilename = getOutputFilename(CALC_MODE::n6n1);
+        string outputFilename = getOutputFilename();
 
         switch (m_OutputFileType)
         {
@@ -1221,11 +1372,13 @@ void EratosthenesSieve::Calculate6n1()
 
         cout << " Saved." << endl;
 
-        stop = chrono::high_resolution_clock::now();
+        //stop = chrono::high_resolution_clock::now();
 
-        cout << format("{:<{}}: {}, '{}'", "Primes saved to file", F_WIDTH, primesSaved, outputFilename) << endl;
-        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
+        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
+        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
+        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("save") + Ticks::GetTick("6n1Calc"))) << endl;
     }
 
     PrintMemoryUsage(); // it should be BEFORE freeing big arrays such as m_prldPrimes and m_bitArray
@@ -1236,74 +1389,101 @@ void EratosthenesSieve::Calculate6n1()
 
 // stores only odd numbers in memory because all even numbers are not primes by default
 // uses two times less memory than Simple method
-void EratosthenesSieve::CalculateOptimum()
+void EratosthenesSieve::calculateOptimum()
 {
-    //because bit array contains only odd numbers m_realStart must be odd too
-    //if ((m_realStart & 0x01ULL) == 0) m_realStart++; // making m_realStart odd
-    uint64_t START = (m_realStart /* - 1ULL*/) / 2ULL; // Переводим в индекс в уплотненном массиве. Не храним четные элементы так как они делятся на 2 по умолчанию.
-    uint64_t END   = m_realEnd / 2ULL; // переводим в индекс
+    uint64_t START = (m_realStart /* - 1ULL*/) / 2ULL; // calc start index of packed array. Do not store even numbers because, no need spending space on them.
+    uint64_t END   = m_realEnd / 2ULL; // calc end index of packed array
 
-//    cout << format(cout.getloc(), "{:<{}}: ", "Start ", F_WIDTH) << m_realStart << endl;
-//    cout << format(cout.getloc(), "{:<{}}: ", "Length ", F_WIDTH) << m_realLength << endl;
+    defineRanges(START, END);
+    m_nextPrimeIndex = 1; //bypass prime '2'
 
-    LoadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
+    loadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
 
     m_bitArray = new SegmentedArray(START, END);
 
-    auto start1 = chrono::high_resolution_clock::now();
-
-    //cout << "Calculation started" << std::endl;
-
+    //auto start1 = chrono::high_resolution_clock::now();
+    Ticks::Start("OptCalc");
+    
     StartProgress(m_readPrimes);
 
     if (Parameters::THREADS > 1)
     {
-        FindPrimesInThreads(Parameters::THREADS - 1); // waits until all threads are finished
+        StrikeoutComposedPred predStrikeoutComposed = [](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+            {
+                uint64_t index = (NPrime - 1) / 2;
+                auto range = es->getRange(index);
+                if (range != nullptr)
+                    range->first->lock();
+
+                //while (NPrime < es->m_realEnd)
+                while(index < es->m_bitArray->iend())
+                {
+                    es->m_bitArray->setTrue(index);
+                    //NPrime += 2 * currPrime; // NPrime + currPrime makes NPrime even. we have to bypass cases when NPrime is even. That is why we do NPrime + 2*currPrime
+                    //index = (NPrime - 1) / 2;
+                    index += currPrime; // this is equivalent of two lines above
+
+                    if (index > range->second.second)
+                    {
+                        range->first->unlock();
+                        range = es->getRange(index);
+                        if (range != nullptr) // range can be null one time when j becomes bigger than m_realEnd in this loop.  
+                            range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
+                    }
+                }
+
+                if(range != nullptr)
+                    range->first->unlock(); // unlock last range
+            };
+
+        FindPrimesInThreads(Parameters::THREADS, predStrikeoutComposed); // waits until all threads are finished
     }
     else
     {
-        //uint64_t len = m_bitArray->end();
-        uint64_t begin;
-        uint64_t rem;
-        //uint64_t realEnd = m_realStart + m_realLength;
+        uint64_t NPrime, currPrime, index;
+        
         for (uint32_t i = 1; i < m_readPrimes; ++i)  //%%%%% bypass prime number 2 and start from 3
         {
             UpdateProgress(i);
 
-            uint64_t currPrime = m_prldPrimes[i];
+            currPrime = m_prldPrimes[i];
 
-            begin = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс            
-            if (begin < m_realStart)
+            NPrime = currPrime * currPrime; // start to strike out composed nums from p^2 because variants like p*3, p*5, p*7 have already visited in previous iterations 
+            if (NPrime < m_realStart)
             {
-                begin = m_realStart;
-                rem = m_realStart % currPrime;
-                if (rem > 0)
-                    begin = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
-              
-                if ((begin & 0x01ULL) == 0) begin += currPrime; // четные числа выброшены из массива поэтому берем следующее кратное currPrime, оно будет точно нечетное            
+                //NPrime = m_realStart;
+                //rem = m_realStart % currPrime;
+                //if (rem > 0)
+                //    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                NPrime = m_realStart + ((currPrime - m_realStart % currPrime) % currPrime);
+
+                if ((NPrime & 0x01ULL) == 0) NPrime += currPrime; // even numbers are not in array therefore take next num divisible by currPrime, it will be odd            
             }
             
-            assert((begin & 0x01ULL) != 0); // begin must be odd
+            assert((NPrime & 0x01ULL) != 0); // NPrime must be odd
 
-            while (begin < m_realEnd)
+            index = (NPrime - 1) / 2;
+            //while (NPrime < m_realEnd)
+            while(index < m_bitArray->iend())
             {
-                //if ((begin & 0x01ull)) // bypass even numbers in begin
-                //{
-                    // begin is always odd, transfer it to index of "packed" array
-                    m_bitArray->setTrue((begin - 1) / 2);
-                //}
-                begin += 2*currPrime; // begin + currPrime makes begin even. we have to bypass cases when even begin is even. That is why we do begin + 2*currPrime
+                // NPrime is always odd, transfer it to index of "packed" array
+                m_bitArray->setTrue(index);
+                index += currPrime;
+                //NPrime += 2*currPrime; // NPrime + currPrime makes begin even. We have to bypass cases when even NPrime is even. That is why we do NPrime + 2*currPrime
             }
         }
     }
 
-    if (m_realStart == 0) m_bitArray->setTrue(0); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
-    if (m_realStart == 1) m_bitArray->setTrue(0); // заглушка если генерим числа начиная с 0. что бы '1' не попало в простые
+    if (m_realStart == 0) m_bitArray->setTrue(0); // 0 and 1 are not primes numbers, mark them compound in array
+    if (m_realStart == 1) m_bitArray->setTrue(0); // 0 and 1 are not primes numbers, mark them compound in array
 
     FinishProgress();
     
-    auto stop = chrono::high_resolution_clock::now();
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    //auto stop = chrono::high_resolution_clock::now();
+    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("OptCalc"))) << endl;
+
+    ///////////////////////////////////////////////////////////////////
 
     uint64_t lastPrime = 0; // kind of global var between predStartTXT and predTXTDiff
 
@@ -1337,11 +1517,16 @@ void EratosthenesSieve::CalculateOptimum()
         {
             uint64_t prime = index * 2 + 1;
             assert(prime > lastPrime);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if (prime >= m_realStart && prime < m_realEnd)
             { 
-                stream << prime - lastPrime << COMMA;
+                if (lastPrime > 2)
+                    stream << (prime - lastPrime) / 2 << COMMA;
+                else
+                    stream << prime - lastPrime << COMMA;
+                //stream << prime - lastPrime << COMMA;
                 lastPrime = prime;
                 return true;
             }
@@ -1379,7 +1564,7 @@ void EratosthenesSieve::CalculateOptimum()
         {
             uint64_t prime = index * 2 + 1;
             assert(prime > lastPrime);
-            assert(prime - lastPrime < MAXUINT16);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if ((prime >= m_realStart) && (prime < m_realEnd))
@@ -1391,6 +1576,8 @@ void EratosthenesSieve::CalculateOptimum()
                 else
                 {
                     uint16_t diff = (uint16_t)(prime - lastPrime);
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
+                    if (lastPrime > 2) diff /= 2;
                     stream.write((char*)&diff, sizeof(diff)); 
                 }
 
@@ -1419,7 +1606,7 @@ void EratosthenesSieve::CalculateOptimum()
         {
             uint64_t prime = index * 2 + 1;
             assert(prime > lastPrime);
-            assert(prime - lastPrime < MAXUINT16);
+            assert(lastPrime == 0 || (prime - lastPrime < MAXUINT16));
 
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
             if ((prime >= m_realStart) && (prime < m_realEnd))
@@ -1427,16 +1614,16 @@ void EratosthenesSieve::CalculateOptimum()
                 uint8_t buf[9];
                 uint64_t diff;
 
-                if (lastPrime == 0) //TODO for simple we might not need this if
+                //if (lastPrime == 0) //TODO for simple we might not need this if
+                //{
+                //    diff = prime;
+                //}
+                //else
                 {
-                    diff = prime;
-                }
-                else
-                {
-                    diff = prime - lastPrime; // diff is always even. that is why we can divide it by 2. more values will fit into single byteт.
-                    assert((diff & 0x01ULL) == 0ULL); // check that diff is really even
+                    diff = prime - lastPrime; // diff is always even. that is why we can divide it by 2. more values will fit into single byte.
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
 
-                    if (lastPrime > 2) diff /= 2; // bypass diff between 2 and 3 = 1
+                    if (lastPrime > 2) diff /= 2; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
                 }
 
                 size_t len = var_len_encode(buf, diff);
@@ -1452,9 +1639,11 @@ void EratosthenesSieve::CalculateOptimum()
     {
         cout << "Saving file...";
 
-        auto start2 = chrono::high_resolution_clock::now();
+        //auto start2 = chrono::high_resolution_clock::now();
+        Ticks::Start("save");
+
         uint64_t primesSaved = 0;
-        string outputFilename = getOutputFilename(CALC_MODE::optimized);
+        string outputFilename = getOutputFilename();
 
         switch (m_OutputFileType)
         {
@@ -1468,11 +1657,13 @@ void EratosthenesSieve::CalculateOptimum()
 
         cout << " Saved." << endl;
 
-        stop = chrono::high_resolution_clock::now();
+        //stop = chrono::high_resolution_clock::now();
 
-        cout << format("{:<{}}: {}, '{}'", "Primes saved to file", F_WIDTH, primesSaved, outputFilename) << endl;
-        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
+        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
+        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
+        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("OptCalc")+ Ticks::GetTick("save"))) << endl;
     }
 
     PrintMemoryUsage(); // it should be BEFORE freeing big arrays such as m_prldPrimes and m_bitArray
@@ -1481,145 +1672,207 @@ void EratosthenesSieve::CalculateOptimum()
     delete m_bitArray;
 }
 
-void EratosthenesSieve::CalculateSimple()
+void EratosthenesSieve::calculateSimple()
 {
-    auto start1 = chrono::high_resolution_clock::now();
+    defineRanges(m_realStart, m_realLength);
+    m_nextPrimeIndex = 0;
 
- //   cout << format("{:<{}}: ", "Start ", F_WIDTH) << m_realStart << endl;
- //   cout << format("{:<{}}: ", "Length ", F_WIDTH) << m_realLength << endl;
-
-    LoadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
+    loadPrimes(); // loading primes from file, result - in m_prldPrimes array. 
 
     m_bitArray = new SegmentedArray(m_realStart, m_realEnd);
 
-    start1 = chrono::high_resolution_clock::now();
-
-    //std::cout << "Calculation started." << std::endl;
+    //start1 = chrono::high_resolution_clock::now();
+    Ticks::Start("SimpleCalc");
     
     StartProgress(m_readPrimes);
 
-    uint64_t len = m_bitArray->iend();
-    for (uint32_t i = 0; i < m_readPrimes; ++i) 
-       {
-           UpdateProgress(i);
+    if (Parameters::THREADS > 1)
+    {
+        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+            {
+                auto range = es->getRange(NPrime);
+                if (range != nullptr)
+                    range->first->lock();
 
-           uint64_t currPrime = m_prldPrimes[i];
+                while (NPrime < es->m_realEnd)
+                {
+                    es->m_bitArray->setTrue(NPrime);
+                    NPrime += currPrime; 
 
-           uint64_t begin = m_realStart % currPrime;
-           if (begin > 0)
-               begin = m_realStart - begin + currPrime; // calculate first number which is inside requested range and divisible by currPrime
-           else
-               begin = m_realStart;
+                    if (NPrime > range->second.second)
+                    {
+                        range->first->unlock();
+                        range = es->getRange(NPrime);
+                        if (range != nullptr) // range can be null one time when j becomes bigger than m_realEnd in this loop.  
+                            range->first->lock(); // we jumped into next range. lock it and continue filtering primes in this range
+                    }
+                }
 
-           uint64_t j = currPrime * currPrime; // начинаем вычеркивать составные с p^2 потому что все варианты вида p*3, p*5, p*7 уже перебрали ранее в предыдущих итерациях. формула это p^2 пересчитанное в спец индекс
-           j = max(begin, j);
+               // if (range != nullptr) 
+               //     range->first->unlock();
+            };
 
-           while (j < len)
-           {
-               m_bitArray->setTrue(j);
-               j += currPrime; 
-           }
-       }
-       
+        FindPrimesInThreads(Parameters::THREADS, predStrikeoutComposed); // waits until all threads are finished
+    }
+    else
+    {
+        uint64_t len = m_bitArray->iend();
+        uint64_t NPrime, currPrime;
 
-    if (m_realStart == 0) m_bitArray->setTrue(0), m_bitArray->setTrue(1); // заглушка если генерим числа начиная с 0. что бы '0' не попало в простые
-    if (m_realStart == 1) m_bitArray->setTrue(1); // заглушка если генерим числа начиная с 1. что бы '1' не попало в простые
-    
+        // special strike out of all even numbers 
+        assert(2 == m_prldPrimes[0]);
+
+        uint64_t k = m_realStart;
+        if (k < 4) k = 4; // leave 2 as prime number 
+        else if ((k & 0x01) != 0) k++; // if k is odd then make k even
+
+        while (k < len)
+        {
+            m_bitArray->setTrue(k);
+            k += 2;
+        }
+
+        for (uint32_t i = 1; i < m_readPrimes; ++i)
+        {
+            UpdateProgress(i);
+
+            currPrime = m_prldPrimes[i];
+
+            NPrime = currPrime * currPrime; // start to strike out composed nums from p^2 because variants like p*3, p*5, p*7 have already visited in previous iterations 
+            if (NPrime < m_realStart)
+            {
+                //NPrime = m_realStart;
+                //rem = m_realStart % currPrime;
+                //if (rem > 0)
+                //    NPrime = m_realStart - rem + currPrime; // calc first number inside specified range that divisible to currPrime
+                NPrime = m_realStart + ((currPrime - m_realStart % currPrime) % currPrime);
+
+                if ((NPrime & 0x01ULL) == 0) NPrime += currPrime; // even numbers are not in array therefore take next num divisible by currPrime, it will be odd            
+            }
+
+            assert((NPrime & 0x01ULL) != 0); // NPrime must be odd
+
+            while (NPrime < m_realEnd)
+            {
+                m_bitArray->setTrue(NPrime);
+                NPrime += (currPrime << 1); // NPrime + currPrime makes even num. We have to bypass cases when even NPrime is even. That is why we do NPrime + 2*currPrime
+            }
+        }
+    }
+
+    if (m_realStart == 0) m_bitArray->setTrue(0), m_bitArray->setTrue(1); // 0 and 1 are not primes numbers, mark them compound in array
+    if (m_realStart == 1) m_bitArray->setTrue(1); // if we generate primes starting from 1, mark 1 as not prime.
+    if ((m_realStart > 2) && (m_realStart & 0x01) == 0) m_bitArray->setTrue(m_realStart);
+
     FinishProgress();
-    //cout << endl;
 
-    auto stop = chrono::high_resolution_clock::now();
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    //auto stop = chrono::high_resolution_clock::now();
+    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("SimpleCalc"))) << endl;
+
+    ///////////////////////////////////////////////////////////////
 
     uint64_t lastPrime = 0; // kind of global var between predStartTXT and predTXTDiff
 
-    StartPrimePred predStart = [this](ostream& stream)
+    StartPrimePred predStart = [this]([[maybe_unused]] ostream& stream)
         {
             assert(stream.tellp() == 0);
-            UNREFERENCED_PARAMETER(stream);
+
             return false; // no any start primes for simple mode
         };
 
     SavePrimeToStreamPred predTXT = [this](ostream& stream, uint64_t index)
         {                       
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
-            if ((index >= m_realStart) && (index < m_realEnd)) //TODO this if can be deleted for simple mode
-            {
+            //if ((index >= m_realStart) && (index < m_realEnd)) //TODO this if can be deleted for simple mode
+            //{
                 stream << index << COMMA;
                 return true;
-            }
-            return false;
+            //}
+            //return false;
         };
 
     SavePrimeToStreamPred predTXTDiff = [this, &lastPrime](ostream& stream, uint64_t index)
         {
             assert(index > lastPrime);
-            
+            assert(lastPrime == 0 || (index - lastPrime < MAXUINT16));
+            assert(lastPrime != 1);
+
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
-            if (index >= m_realStart && index < m_realEnd) //TODO this if can be deleted for simple mode
-            {
+            //if (index >= m_realStart && index < m_realEnd) //TODO this if can be deleted for simple mode
+            //{
+          
+            if (lastPrime > 2)
+                stream << (index - lastPrime) / 2 << COMMA;
+            else 
                 stream << index - lastPrime << COMMA;
-                lastPrime = index;
-                return true;
-            }
-            return false;
+          
+            lastPrime = index;
+            return true;
+            //}
+            //return false;
         };
 
 
     SavePrimeToStreamPred predBIN = [this](ostream& stream, uint64_t index)
         {
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
-            if ((index >= m_realStart) && (index < m_realEnd))
-            {
+            //if ((index >= m_realStart) && (index < m_realEnd))
+            //{
                 stream.write((char*)&index, sizeof(index)); // write primes as is in binary format
                 return true;
-            }
-            return false;
+            //}
+            //return false;
         };
 
     SavePrimeToStreamPred predBINDiff = [this, &lastPrime](ostream& stream, uint64_t index)
         {
-            assert(index - lastPrime < MAXUINT16);
+            assert(index > lastPrime);
+            assert(lastPrime == 0 || (index - lastPrime < MAXUINT16));
             
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
-            if ((index >= m_realStart) && (index < m_realEnd))
-            {               
+            //if ((index >= m_realStart) && (index < m_realEnd))
+            //{               
                 if (lastPrime == 0)
                 {
                     stream.write((char*)&index, sizeof(index));
                 }
                 else
                 {
+                    
                     uint16_t diff = (uint16_t)(index - lastPrime);
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
+                    if (lastPrime > 2) diff /= 2;
                     stream.write((char*)&diff, sizeof(diff));
                 }
 
                 lastPrime = index;
                 return true;
-            }
-            return false;
+            //}
+            //return false;
         };
 
     SavePrimeToStreamPred predBINDiffVar = [this, &lastPrime](ostream& stream, uint64_t index)
         {
-            assert(index - lastPrime < MAXUINT16);
+            assert(index > lastPrime);
+            assert(lastPrime == 0 || (index - lastPrime < MAXUINT16));
             
             // some compressed arrays may contain values outside of specified range, add to file only primes that fit into the range
-            if ((index >= m_realStart) && (index < m_realEnd))
-            {
+            //if ((index >= m_realStart) && (index < m_realEnd))
+            //{
                 uint8_t buf[9];
                 uint64_t diff;
 
-                if (lastPrime == 0) //TODO for simple we might not need this if
-                {
-                    diff = index;
-                }
-                else
+                //if (lastPrime == 0) //TODO for simple we might not need this if
+                //{
+                //    diff = index;
+                //}
+                //else
                 {
                     diff = index - lastPrime; // diff is always even. that is why we can divide it by 2. more values will fit into single byteт.
-                    assert((diff & 0x01ULL) == 0ULL); // check that diff is really even
+                    assert(lastPrime < 3 || ((diff & 0x01ULL) == 0ULL)); // check that diff is really even
 
-                    if (lastPrime > 2) diff /= 2; // bypass diff between 2 and 3 = 1
+                    if (lastPrime > 2) diff /= 2; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
                 }
 
                 size_t len = var_len_encode(buf, diff);
@@ -1627,17 +1880,19 @@ void EratosthenesSieve::CalculateSimple()
 
                 lastPrime = index;
                 return true;
-            }
-            return false;
+            //}
+            //return false;
         };
 
     if (Parameters::SAVEFILE)
     {
         cout << "Saving file...";
 
-        auto start2 = chrono::high_resolution_clock::now();
+        //auto start2 = chrono::high_resolution_clock::now();
+        Ticks::Start("save");
+
         uint64_t primesSaved = 0;
-        string outputFilename = getOutputFilename(CALC_MODE::simple);
+        string outputFilename = getOutputFilename();
 
         switch (m_OutputFileType)
         {
@@ -1650,11 +1905,13 @@ void EratosthenesSieve::CalculateSimple()
 
         cout << " Saved." << endl;
 
-        stop = chrono::high_resolution_clock::now();
+        //stop = chrono::high_resolution_clock::now();
 
-        cout << format("{:<{}}: {}, '{}'", "Primes saved to file", F_WIDTH, primesSaved, outputFilename) << endl;
-        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
+        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
+        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
+        cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("SimpleCalc") + Ticks::GetTick("save"))) << endl;
     }
 
     PrintMemoryUsage(); // it should be BEFORE freeing big arrays such as m_prldPrimes and m_bitArray
@@ -1691,7 +1948,7 @@ uint64_t EratosthenesSieve::saveAsTXT(string& outputFilename, StartPrimePred sta
         {
             if (pred(oss, i)) cntPrimes++;
       
-            if (oss.tellp() > THRESHOLD) // when we are close to capacity but еще НЕ перепрыгнули ее
+            if ((uint64_t)oss.tellp() > THRESHOLD) // when we are close to capacity but еще НЕ перепрыгнули ее
             {
                 auto v = oss.view();
                 f.write(v.data(), v.size());
@@ -1932,7 +2189,7 @@ uint64_t EratosthenesSieve::saveAsBINDiffVarSimpleMode(uint64_t start, Segmented
             uint64_t diff = (i - lastPrime); // разница всегда четная. поэтому можем хранить половину значения. больше значений уместится в 1 байт.
             assert((diff & 0x01ULL) == 0ULL); // check that diff is even
 
-            if (lastPrime > 2) diff /= 2;
+            if (lastPrime > 2) diff /= 2; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
 
             size_t len = var_len_encode(buf, diff);
             f.write((char*)buf, len);
@@ -1992,7 +2249,7 @@ uint64_t EratosthenesSieve::saveAsBINDiffVarOptimumMode(uint64_t start, Segmente
                 diff = prime - lastPrime;
                 assert((diff & 0x01ULL) == 0ULL); // check that diff is even
 
-                if (lastPrime > 2) diff >>= 1; // разница всегда четная. поэтому можем хранить половину значения. больше значений уместится в 1 байт.
+                if (lastPrime > 2) diff >>= 1; // bypass div by 2 when lastPrime=0 and lastPrime=2 because diff between 2 and 3 = 1
             }
 
             size_t len = var_len_encode(buf + offset, diff);            
