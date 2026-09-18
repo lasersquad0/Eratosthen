@@ -54,7 +54,13 @@ size_t PrimesFIO::LoadFromTXTDiff(uint64_t* arr, size_t len, uint64_t& lastPrime
 	{
 		getline(f, line, ',');
 		if (f.eof()) break;
-		arr[cnt] = lastPrime + atoll(line.c_str());
+	
+		// diff between 2 and 3 is 1. we do not divide it by 2 during saving, all the other diffs are divided by 2.
+		if (lastPrime < 3)
+			arr[cnt] = lastPrime + atoll(line.c_str()); 
+		else
+			arr[cnt] = lastPrime + atoll(line.c_str()) * 2;
+		
 		lastPrime = arr[cnt++];
 	}
 
@@ -74,7 +80,13 @@ size_t PrimesFIO::BypassTXTDiff(uint64_t bypassCount, uint64_t& lastPrime, fstre
 	{
 		getline(f, line, ',');
 		if (f.eof()) break;
-		lastPrime = lastPrime + atoll(line.c_str());
+
+		// diff between 2 and 3 is 1. we do not divide it by 2 during saving, all the other diffs are divided by 2.
+		if (lastPrime < 3)
+			lastPrime += atoll(line.c_str());
+		else
+			lastPrime += atoll(line.c_str()) * 2;
+		
 		bypassCount--;
 		cnt++;
 	}
@@ -136,7 +148,12 @@ size_t PrimesFIO::LoadFromBINDiff(uint64_t* arr, size_t len, uint64_t& lastPrime
 			uint16_t diff = 0;
 			f.read((char*)&diff, sizeof(uint16_t));
 			if (f.eof()) break;
-			arr[cnt] = (uint64_t)diff + lastPrime;
+
+			// diff between 2 and 3 is 1. we do not divide it by 2 during saving, all the other diffs are divided by 2.
+			if(lastPrime < 3)
+				arr[cnt] = lastPrime + (uint64_t)diff;
+			else
+				arr[cnt] = lastPrime + (uint64_t)diff * 2;
 		}
 
 		lastPrime = arr[cnt++];
@@ -162,7 +179,12 @@ size_t PrimesFIO::BypassBINDiff(size_t bypassCount, uint64_t& lastPrime, fstream
 		{
 			f.read((char*)&diff, sizeof(uint16_t));
 			if (f.eof()) break;
-			lastPrime = (uint64_t)diff + lastPrime;
+
+			// diff between 2 and 3 is 1. we do not divide it by 2 during saving, all the other diffs are divided by 2.
+			if (lastPrime < 3)
+				lastPrime += (uint64_t)diff;
+			else 
+				lastPrime += (uint64_t)diff*2;
 		}
 
 		cnt++;
@@ -173,7 +195,7 @@ size_t PrimesFIO::BypassBINDiff(size_t bypassCount, uint64_t& lastPrime, fstream
 
 void PrimesFIO::SaveAsTXT(uint64_t* arr, size_t len, fstream& f)
 {
-	uint32_t chunk = 10'000'000;
+	uint64_t chunk = 10'000'000;
 
 	string s, ss;
 	s.reserve(chunk);
@@ -184,7 +206,7 @@ void PrimesFIO::SaveAsTXT(uint64_t* arr, size_t len, fstream& f)
 		s.append(ss);
 		s.append(",");
 
-		if (s.size() > chunk - 20) // when we are close to capacity but еще НЕ перепрыгнули ее
+		if (s.size() > chunk - 20ull) // when we are close to capacity but еще НЕ перепрыгнули ее
 		{
 			f.write(s.c_str(), s.length());
 			// f.flush();
@@ -201,7 +223,7 @@ void PrimesFIO::SaveAsTXT(uint64_t* arr, size_t len, fstream& f)
 
 void PrimesFIO::SaveAsTXTDiff(uint64_t* arr, size_t len, uint64_t& lastPrime, uint64_t& maxDiff, fstream& f)
 {
-	uint32_t chunk = 10'000'000;
+	uint64_t chunk = 10'000'000;
 
 	string s;
 	s.reserve(chunk);
@@ -209,14 +231,15 @@ void PrimesFIO::SaveAsTXTDiff(uint64_t* arr, size_t len, uint64_t& lastPrime, ui
 	for (uint64_t i = 0; i < len; ++i)
 	{
 		uint64_t diff = arr[i] - lastPrime;
+		if (lastPrime > 2) diff /= 2;
+
 		if ((maxDiff < diff) && (lastPrime != 0)) maxDiff = diff;
 
 		s.append(to_string(diff));
+		s.append(",");
 		lastPrime = arr[i];
 
-		s.append(",");
-
-		if (s.size() > chunk - 20) // when we are close to capacity but еще НЕ перепрыгнули ее
+		if (s.size() > chunk - 20ull) // when we are close to capacity but еще НЕ перепрыгнули ее
 		{
 			f.write(s.c_str(), s.length());
 			// f.flush();
@@ -253,6 +276,8 @@ void PrimesFIO::SaveAsBINDiff(uint64_t* arr, size_t len, uint64_t& lastPrime, ui
 		else
 		{
 			uint16_t diff = (uint16_t)(arr[i] - lastPrime); // diff should fit into 2 bytes
+			if (lastPrime > 2) diff /= 2;
+
 			if (maxDiff < diff) maxDiff = diff;
 
 			f.write((char*)&diff, sizeof(uint16_t));
@@ -276,7 +301,7 @@ void PrimesFIO::SaveAsBINDiffVar(uint64_t* arr, size_t len, uint64_t& lastPrime,
 
 		if (lastPrime > 2) // special case when diff is odd when lastPrime==2 (1=3-2)
 		{
-			diff /= 2; // делим на 2 всё кроме первого числа так как первое число это полный prime number.
+			diff /= 2; // divide by 2 everything except first number which is prime (not diff) and diff between 2 and 3
 			if (maxDiff < diff) maxDiff = diff;
 		}
 
@@ -321,7 +346,7 @@ size_t PrimesFIO::LoadFromBINDiffVar(uint64_t* arr, size_t len, uint64_t& lastPr
 			assert(diff < 1000);
 		}
 
-		if (lastPrime > 2) diff *= 2; // умножаем на 2 все: кроме первого числа, и когда lastPrime==2
+		if (lastPrime > 2) diff *= 2; // multiply by 2 everying except first number (which is not diff) and when lastPrime==2
 
 		arr[cnt] = diff + lastPrime;
 		lastPrime = arr[cnt++];
@@ -361,7 +386,7 @@ size_t PrimesFIO::BypassBINDiffVar(uint64_t bypassCount, uint64_t& lastPrime, IB
 			assert(diff < 1000);
 		}
 
-		if (lastPrime > 2) diff *= 2; // умножаем на 2 все: кроме первого числа, и когда lastPrime==2
+		if (lastPrime > 2) diff *= 2; // multiply by 2 everying except first number (which is not diff) and when lastPrime==2
 
 		lastPrime = diff + lastPrime;
 		cnt++;
@@ -372,6 +397,7 @@ size_t PrimesFIO::BypassBINDiffVar(uint64_t bypassCount, uint64_t& lastPrime, IB
 	return cnt;
 }
 
+// ***!!!! OLD version without multiplier by 2 !!!! *****
 size_t PrimesFIO::BypassBINDiffVarOLD(uint64_t bypassCount, uint64_t& lastPrime, fstream& f)
 {
 	if (bypassCount == 0) return 0;
@@ -429,8 +455,8 @@ size_t PrimesFIO::LoadFromBINDiffVarOLD(uint64_t* arr, size_t len, uint64_t& las
 
 		if (f.eof()) break;
 
-		size_t res = var_len_decode(buf, maxSize, &diff);
-
+		[[maybe_unused]] size_t res = var_len_decode(buf, maxSize, &diff);
+		
 		assert(res > 0);
 
 		arr[cnt] = diff + lastPrime;
