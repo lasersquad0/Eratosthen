@@ -77,7 +77,7 @@ cli_string CHelpFormatter::Format(const cli_string &appName, COptionsList *optio
         if (rargs > ARGS_THRESHOLD || oargs > ARGS_THRESHOLD)
         {
             auxBuffer.append(_T(" <req args>(") + to_clistring(rargs) + _T(")"));
-            auxBuffer.append(_T("...<total args>(up to ") + to_clistring(oargs) + _T(")"));
+            auxBuffer.append(_T("..<tot args>(") + to_clistring(oargs) + _T(")"));
         }
         else
         {
@@ -108,7 +108,8 @@ cli_string CHelpFormatter::Format(const cli_string &appName, COptionsList *optio
         auxBuffer.append(cli_string(largestArgsName - argsNames[i].size(), ' ') + argsParams[i]);
 
         vector_string_t descriptionLines = SplitString(opt[i].GetDescription(), _T("\n"));
-        if (!descriptionLines.empty()) auxBuffer.append(cli_string(largestArgsName + largestParamsName + 1 - auxBuffer.size(), ' ') + descriptionLines[0]);
+        if (!descriptionLines.empty()) 
+            auxBuffer.append(cli_string(largestArgsName + largestParamsName + 1 - auxBuffer.size(), ' ') + descriptionLines[0]);
 
         for (size_t l = 1; l < descriptionLines.size(); ++l)
         {
