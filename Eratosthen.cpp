@@ -23,8 +23,8 @@ using namespace std;
 
 struct MyGroupSeparator : numpunct<char>
 {
-    char do_thousands_sep() const override { return ' '; } // разделитель тыс€ч
-    string do_grouping() const override { return "\3"; } // группировка по 3
+    char do_thousands_sep() const override { return ' '; } // thousands delimiter
+    string do_grouping() const override { return "\3"; }   // groupping by 3
 };
 
 static void defineOptions(COptionsList& options)
@@ -42,7 +42,7 @@ static void defineOptions(COptionsList& options)
 void PrintUsage()
 {
     cout << endl << "Usage: ";
-    cout << APP_EXE_NAME << " [-s][-o][-6][-30] <outputformat> <start> <length> [option] <optionarg>" << endl << endl;
+    cout << APP_EXE_NAME << " [-s][-o][-6][-30] <format> <start> <length> [option] <optionarg>" << endl << endl;
    
     cout << "Commands" << endl;
     cout << "  -s, --simple          Generate primes using simple Eratosthenes sieve algorithm." << endl;
@@ -51,7 +51,7 @@ void PrintUsage()
     cout << "  -30, --30nx           Generate primes using 30nx Eratosthenes sieve mode. Logical extension of 6n1 algorithm." << endl;
     
     cout << endl << "Command arguments" << endl;
-    cout << "  <outputformat>        Defines output file format. Possible values: txt, txtdiff, bin, bindiff, and bindiffvar." << endl;
+    cout << "  <format>              Defines output file format. Possible values: txt, txtdiff, bin, bindiff, and bindiffvar." << endl;
     cout << "  <start>               Starting value for generating primes. Accepts suffixes B (bytes), K (kilo), M (mega), G (giga), T (tera), P (peta) for big values." << endl;
     cout << "  <length>              Length of a range. Primes are generated in a range: start...start+length. Accepts suffixes B, K, M, G, T, P." << endl;
 
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
          (cmd.HasOption(OPT_6) && cmd.HasOption(OPT_30))
         ) 
     {
-        cout << "Error: Only one of four commands -s, -o, -6, -30 is allowed in command line." << endl;
+        cout << "Only one of four commands -s, -o, -6, -30 is allowed in command line." << endl;
         PrintUsage();
         //cout << CHelpFormatter::Format(APP_NAME, &options) << endl;
 
@@ -180,7 +180,6 @@ int main(int argc, char* argv[])
         {
             cout << endl << e.what() << endl << endl;
             PrintUsage();
-            //cout << CHelpFormatter::Format(APP_NAME, &options) << endl;
             return 1;
         }
         catch (ios_base::failure& e)
@@ -193,8 +192,7 @@ int main(int argc, char* argv[])
         catch (exception& e)
         {
             cout << endl << e.what() << endl << endl;
-            PrintUsage();
-            //cout << CHelpFormatter::Format(APP_NAME, &options) << endl;
+            cout << "Run " << APP_EXE_NAME << " -h to get more info about command line parameters." << endl;
             return 1;
         }
         catch (...)
