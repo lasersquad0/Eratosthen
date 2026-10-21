@@ -40,10 +40,10 @@ static vector_string_t SplitString(const cli_string &text, const cli_string &del
 
 cli_string CHelpFormatter::Format(const cli_string &appName, COptionsList *options)
 {
-    cli_string helpBuffer(_T("Usage: "));
+    cli_string helpBuffer(_T("Usage:\n   "));
     helpBuffer.append(appName);
-    helpBuffer.append(_T(" -command <arg1>...<argN>\n\n"));
-    helpBuffer.append(_T("Commands:\n"));
+    helpBuffer.append(_T(" -command <arg1>...<argN> -option <arg>\n\n"));
+    helpBuffer.append(_T("Commands and options:\n"));
 
     vector_option_t& opt = options->GetAllOptions();
 
