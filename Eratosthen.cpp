@@ -30,13 +30,17 @@ struct MyGroupSeparator : numpunct<char>
 static void defineOptions(COptionsList& options)
 {
     options.AddOption(OPT_S, "simple", "Generate primes using simple Eratosthenes sieve algorithm", 3);
-    options.AddOption(OPT_O, "optimum", "Generate primes using optimized Eratosthenes sieve algorithm (uses less memory by excluding even numbers from consideration)", 3);
+    options.AddOption(OPT_O, "optimum", "Generate primes using optimized Eratosthenes sieve algorithm\n(uses less memory by excluding even numbers from consideration)", 3);
     options.AddOption(OPT_6, "6n1", "Generate primes using 6n1 Eratosthenes sieve algorithm. All primes have 6n+1 or 6n+5 structure.", 3);
     options.AddOption(OPT_30, "30nx", "Generate primes using 30nx Eratosthenes sieve mode. Some extension of 6n1 algorithm", 3);
     options.AddOption(OPT_P, "preload", string("Specify file with primes to preload. If not specified then default '") + Pre_Loaded_Primes_Filename + "' file name is used", 1);
     options.AddOption(OPT_T, "threads", "Use specified number of threads during primes generating", 1);
     options.AddOption(OPT_H, "help", "Show info about command line arguments.", 0);
     options.AddOption(OPT_N, "nofile", "Do not save file, only calculate numbers. Used mostly for measuring calculation metrics.", 0);
+
+    options.MutuallyExclusive(OPT_S, OPT_O, OPT_6);
+    options.MutuallyExclusive(OPT_30, OPT_O, OPT_6);
+    options.MutuallyExclusive(OPT_30, OPT_S);
 }
 
 void PrintUsage()
@@ -46,14 +50,17 @@ void PrintUsage()
    
     cout << "Commands" << endl;
     cout << "  -s, --simple          Generate primes using simple Eratosthenes sieve algorithm." << endl;
-    cout << "  -o, --optimum         Generate primes using optimized Eratosthenes sieve algorithm (uses less memory by excluding even numbers from consideration)." << endl;
+    cout << "  -o, --optimum         Generate primes using optimized Eratosthenes sieve algorithm" << endl;
+    cout << "                        (uses less memory by excluding even numbers from consideration)." << endl;
     cout << "  -6, --6n1             Generate primes using 6n1 Eratosthenes sieve algorithm. All primes have 6n + 1 or 6n + 5 structure." << endl;
     cout << "  -30, --30nx           Generate primes using 30nx Eratosthenes sieve mode. Logical extension of 6n1 algorithm." << endl;
     
     cout << endl << "Command arguments" << endl;
     cout << "  <format>              Defines output file format. Possible values: txt, txtdiff, bin, bindiff, and bindiffvar." << endl;
-    cout << "  <start>               Starting value for generating primes. Accepts suffixes B (bytes), K (kilo), M (mega), G (giga), T (tera), P (peta) for big values." << endl;
-    cout << "  <length>              Length of a range. Primes are generated in a range: start...start+length. Accepts suffixes B, K, M, G, T, P." << endl;
+    cout << "  <start>               Starting value for generating primes." << endl; 
+    cout << "                        Accepts suffixes B(bytes), K(kilo), M(mega), G(giga), T(tera), P(peta) for big values." << endl;
+    cout << "  <length>              Length of a range. Primes are generated in a range: start...start+length." << endl;
+    cout << "                        Accepts suffixes B, K, M, G, T, P." << endl;
 
     cout << endl << "Options" << endl;
     cout << "  -p, --preload <fname> Specify file with primes to preload. Two formats are supported: txt and bindiffvar." << endl;
