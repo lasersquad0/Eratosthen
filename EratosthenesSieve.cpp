@@ -170,7 +170,7 @@ void EratosthenesSieve::loadPrimes()
     uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realStart + m_realLength)); // max prime num in a specified range 
     uint64_t numPrimesLessThan = (uint64_t)((double)maxPrimeToLoad / log(maxPrimeToLoad)); // approx number of prime numbers in a range 
     cout << format("{:<{}}: ", "Need for calculation", F_WIDTH) << numPrimesLessThan << " primes";
-    cout << " (this is an approximate number of primes in a range from 2 to " << maxPrimeToLoad << "=sqrt(" << m_realEnd << ") )" << endl;
+    cout << " (approximate number of primes in a range from 2 to " << maxPrimeToLoad << "=sqrt(" << m_realEnd << ") )" << endl;
     //cout << "There are *approximately* " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << " = sqrt(" << m_realStart + m_realLength << ") we need for calculations." << endl;
 
     // read at least 1000 primes from file because approximate formula for numPrimesLessThan does not work well for low numbers
@@ -591,9 +591,7 @@ void EratosthenesSieve::calculate30nx()
 
     FinishProgress();
 
-    //auto stop = chrono::high_resolution_clock::now();
-    //cout << format("{:<{}}: {}", "Calculations done in", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
-    cout << format("{:<{}}: {}", "Calculations done in", F_WIDTH, MillisecToStr<string>(Ticks::Finish("n30xCalc"))) << endl;
+    cout << format("{:<{}}: {}", "Calculation time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("n30xCalc"))) << endl;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -958,11 +956,8 @@ void EratosthenesSieve::calculate30nx()
 
         cout << " Saved." << endl;
 
-        //stop = chrono::high_resolution_clock::now();
-        
         cout << format("{:<{}}: ","Primes saved to file", F_WIDTH) << primesSaved << endl;
-        //cout << format("{:<{}}: {}","File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        //cout << format("{:<{}}: {}","Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "File size", F_WIDTH) << std::filesystem::file_size(outputFilename) << " bytes" << endl;
         cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
         cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("n30xCalc") + Ticks::GetTick("save"))) << endl;
     }
@@ -1118,9 +1113,7 @@ void EratosthenesSieve::calculate6n1()
     
     FinishProgress();
 
-    //auto stop = chrono::high_resolution_clock::now();
-    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("6n1Calc"))) << endl;
+    cout << format("{:<{}}: {}", "Calculation time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("6n1Calc"))) << endl;
 
     /////////////////////////////////////////////////////////////////////////
 
@@ -1372,11 +1365,9 @@ void EratosthenesSieve::calculate6n1()
 
         cout << " Saved." << endl;
 
-        //stop = chrono::high_resolution_clock::now();
-
         cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
-        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "File size", F_WIDTH) << std::filesystem::file_size(outputFilename) << " bytes" << endl;
+        
         cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
         cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("save") + Ticks::GetTick("6n1Calc"))) << endl;
     }
@@ -1479,9 +1470,7 @@ void EratosthenesSieve::calculateOptimum()
 
     FinishProgress();
     
-    //auto stop = chrono::high_resolution_clock::now();
-    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("OptCalc"))) << endl;
+    cout << format("{:<{}}: {}", "Calculation time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("OptCalc"))) << endl;
 
     ///////////////////////////////////////////////////////////////////
 
@@ -1657,12 +1646,10 @@ void EratosthenesSieve::calculateOptimum()
 
         cout << " Saved." << endl;
 
-        //stop = chrono::high_resolution_clock::now();
-
         cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
-        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "File size", F_WIDTH) << std::filesystem::file_size(outputFilename) << " bytes" << endl;
         cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
+        
         cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("OptCalc")+ Ticks::GetTick("save"))) << endl;
     }
 
@@ -1766,9 +1753,7 @@ void EratosthenesSieve::calculateSimple()
 
     FinishProgress();
 
-    //auto stop = chrono::high_resolution_clock::now();
-    //cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
-    cout << format("{:<{}}: {}", "Calculations done", F_WIDTH, MillisecToStr<string>(Ticks::Finish("SimpleCalc"))) << endl;
+    cout << format("{:<{}}: {}", "Calculations time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("SimpleCalc"))) << endl;
 
     ///////////////////////////////////////////////////////////////
 
@@ -1905,11 +1890,9 @@ void EratosthenesSieve::calculateSimple()
 
         cout << " Saved." << endl;
 
-        //stop = chrono::high_resolution_clock::now();
-
         cout << format("{:<{}}: ", "Primes saved to file", F_WIDTH) << primesSaved << endl;
-        //cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start2).count())) << endl;
-        //cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
+        cout << format("{:<{}}: ", "File size", F_WIDTH) << std::filesystem::file_size(outputFilename) << " bytes" << endl;
+        
         cout << format("{:<{}}: {}", "File saving time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("save"))) << endl;
         cout << format("{:<{}}: {}", "Total time", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("SimpleCalc") + Ticks::GetTick("save"))) << endl;
     }
