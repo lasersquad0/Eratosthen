@@ -22,7 +22,6 @@ typedef wchar_t char_t;
 typedef std::wstring string_t;
 typedef std::wstringstream stringstream_t;
 typedef std::wostream ostream_t;
-
 #define to_string_t std::to_wstring
 #define cout_t std::wcout
 
@@ -40,11 +39,12 @@ typedef std::ostream ostream_t;
 
 
 //void Trim(std::string& str); //Note: str will be changed upon function return
-void TrimAndUpper(std::string& str); //Note: str will be changed upon function return
+void TrimAndUpper(string_t& str); //Note: str will be changed upon function return
 
 // special non-template function for wchar_t*
 //template<>
 std::string wtos(const wchar_t* wstr);
+//std::string wtos(const char* wstr);
 
 template<class WSTRING>
 std::string wtos(const WSTRING& wstr)
@@ -65,7 +65,7 @@ std::string wtos(const WSTRING& wstr)
         int len = WideCharToMultiByte(CP_UTF8, 0 /*WC_NO_BEST_FIT_CHARS*/, wstr.data(), (int)wstr.length(), nullptr, 0, nullptr, nullptr);
 
         if (len == 0)
-            throw std::runtime_error(std::format("Error in WideCharToMultiByte 1. Error code: {}", GetLastError()));
+			throw std::runtime_error(std::format("Error in WideCharToMultiByte 1. Error code: {}", GetLastError()));
 
         std::string dest;
         dest.resize(len);
@@ -119,7 +119,7 @@ typedef wchar_t* pwchar_t; // needed for proper specialization for wchar_t*
 
 // makes conversion between string and wstring back and forth
 template<typename T>
-constexpr std::basic_string<T> convert_string(const std::filesystem::path& str)
+[[nodiscard]] std::basic_string<T> convert_string(const std::filesystem::path& str)
 {
     static_assert(std::is_same_v<T, char> || std::is_same_v<T, wchar_t>);
 
@@ -127,7 +127,7 @@ constexpr std::basic_string<T> convert_string(const std::filesystem::path& str)
     {
         return str.string();
     }
-    else if (std::is_same_v<T, wchar_t>)
+    else if constexpr (std::is_same_v<T, wchar_t>)
     {
         return str.wstring();
     }
@@ -137,8 +137,8 @@ constexpr std::basic_string<T> convert_string(const std::filesystem::path& str)
     else if (std::is_same_v<T, char32_t>) {
         return str.u32string();
     } */
-
 }
+
 
 template<class STRING>
 STRING MillisecToStr(uint64_t ms)
