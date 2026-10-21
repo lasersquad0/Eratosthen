@@ -1,6 +1,7 @@
 //
 // Project includes
 //
+#include <cassert>
 #include "Option.h"
 
 //
@@ -53,9 +54,9 @@ const cli_string COption::GetNonEmptyName(bool addDash /* =false*/)
 {
     if (addDash)
         if (m_ShortName.empty())
-            return DDASH + m_LongName;
-        else
-            return DASH + m_ShortName;
+			return cli_string(DDASH) + m_LongName;
+		else
+            return cli_string(DASH) + m_ShortName;
     else
         if (m_ShortName.empty())
             return m_LongName;
@@ -65,6 +66,8 @@ const cli_string COption::GetNonEmptyName(bool addDash /* =false*/)
 
 COption& COption::Excludes(COption* opt)
 {
+    if (opt == nullptr) return *this; // do nothing
+
     if (opt != this) // cannot add itself into excludes
     {
         m_Excludes.insert(opt);
