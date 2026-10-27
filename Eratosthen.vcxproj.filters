@@ -21,18 +21,6 @@
     <ClCompile Include="Eratosthen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SegmentedArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EratosthenesSieve.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Parameters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="external\cli\CommandLine.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
@@ -51,27 +39,54 @@
     <ClCompile Include="external\utils\src\PrimesFIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\CheckPrimes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EratosthenesSieve.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FileConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Parameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SegmentedArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SegmentedArray.h">
+    <ClInclude Include="include\CheckPrimes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EratosthenesSieve.h">
+    <ClInclude Include="include\CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Parameters.h">
+    <ClInclude Include="include\Debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ProgressPrinter.h">
+    <ClInclude Include="include\EratosthenesSieve.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CriticalSection.h">
+    <ClInclude Include="include\FileConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="include\Parameters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="external\utils\include\PrimesFIO.h">
+    <ClInclude Include="include\ProgressPrinter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SegmentedArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

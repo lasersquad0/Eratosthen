@@ -114,11 +114,12 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external/cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external/cli;$(ProjectDir)include</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ModuleDependenciesFile />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external/cli</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external/cli;$(ProjectDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -147,25 +148,30 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Eratosthen.cpp" />
-    <ClCompile Include="EratosthenesSieve.cpp" />
     <ClCompile Include="external\cli\CommandLine.cpp" />
     <ClCompile Include="external\cli\DefaultParser.cpp" />
     <ClCompile Include="external\cli\HelpFormatter.cpp" />
     <ClCompile Include="external\cli\Option.cpp" />
     <ClCompile Include="external\cli\OptionsList.cpp" />
     <ClCompile Include="external\utils\src\PrimesFIO.cpp" />
-    <ClCompile Include="Parameters.cpp" />
-    <ClCompile Include="SegmentedArray.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="src\CheckPrimes.cpp" />
+    <ClCompile Include="src\EratosthenesSieve.cpp" />
+    <ClCompile Include="src\FileConverter.cpp" />
+    <ClCompile Include="src\Parameters.cpp" />
+    <ClCompile Include="src\SegmentedArray.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CriticalSection.h" />
-    <ClInclude Include="EratosthenesSieve.h" />
-    <ClInclude Include="external\utils\include\PrimesFIO.h" />
-    <ClInclude Include="Parameters.h" />
-    <ClInclude Include="ProgressPrinter.h" />
-    <ClInclude Include="SegmentedArray.h" />
-    <ClInclude Include="Utils.h" />
+    <ClInclude Include="include\CheckPrimes.h" />
+    <ClInclude Include="include\CriticalSection.h" />
+    <ClInclude Include="include\Debug.h" />
+    <ClInclude Include="include\EratosthenesSieve.h" />
+    <ClInclude Include="include\FileConverter.h" />
+    <ClInclude Include="include\Parameters.h" />
+    <ClInclude Include="include\ProgressPrinter.h" />
+    <ClInclude Include="include\SegmentedArray.h" />
+    <ClInclude Include="include\Utils.h" />
+    <ClInclude Include="include\Version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
