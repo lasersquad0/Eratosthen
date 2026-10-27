@@ -10,8 +10,7 @@
 //
 // STDLib/OS includes
 //
-#include <tchar.h>
-#include <strsafe.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 #include <set>
@@ -19,20 +18,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #if defined(UNICODE) || defined(_UNICODE)
-//#define _T(x)      L ## x
+#define _U(x)      L ## x
 typedef std::wstring cli_string;
+typedef wchar_t cli_char;
 #define to_clistring std::to_wstring
 
 #else
 
-//#define _T(x)      x
+#define _U(x)      x
 typedef std::string cli_string;
+typedef char cli_char;
 #define to_clistring std::to_string
 
 #endif
 
-#define DASH  _T("-")
-#define DDASH _T("--")
+#define DASH  _U("-")
+#define DDASH _U("--")
 
 class COption;
 
