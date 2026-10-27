@@ -525,7 +525,7 @@ static char mytoupper(int c) // to eliminate compile warning "warning C4244: '='
 	return (char)toupper(c);
 }
 
-PRIMES_FILE_FORMAT PrimesFIO::GetFileType(std::string& fileName)
+PRIMES_FILE_FORMAT PrimesFIO::GetFileType(const std::string& fileName)
 {
 	std::string fn1 = fileName;
 
