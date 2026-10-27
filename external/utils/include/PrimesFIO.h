@@ -35,7 +35,7 @@ private:
 	inline static const std::string_view DIFFVAR = "DIFFVAR";
 
 public:
-	static PRIMES_FILE_FORMAT GetFileType(std::string& fileName);
+	static PRIMES_FILE_FORMAT GetFileType(const std::string& fileName);
 
 	//TODO make all these methods static???
 	size_t LoadFromTXT(uint64_t* arr, size_t len, std::fstream& f);
