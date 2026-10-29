@@ -85,7 +85,7 @@ namespace PrimesFIO
 			lastPrime = arr[cnt++];
 		}
 		
-		f.clear();
+		f.clear(); // when eof() is true then tellg() returns incorrect value because it thinks that stream is in fail state. need to clear this state.
 		assert(f.tellg() != -1);
 		assert(f.tellg() != 0);
 		return { cnt, (size_t)(f.tellg() - startPos) };
