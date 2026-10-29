@@ -42,8 +42,16 @@ typedef std::ostream ostream_t;
 #endif
 
 
-//void Trim(std::string& str); //Note: str will be changed upon function return
+void Trim(std::string& str); //Note: str will be changed upon function return
 void TrimAndUpper(string_t& str); //Note: str will be changed upon function return
+
+// extracts filename from path with filename
+std::string ExtractFileName(const std::string& FileName);
+// extracts file dir from path with filename
+std::string ExtractFileDir(const std::string& FileName);
+std::string ExtractFileExt(const std::string& FileName);
+// removed an extension from file name
+std::string StripFileExt(const std::string& FileName);
 
 #ifndef WIN32
 static std::string WideToUTF8(const std::wstring& ws)
