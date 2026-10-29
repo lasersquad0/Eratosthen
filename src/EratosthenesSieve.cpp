@@ -18,7 +18,7 @@ const uint32_t PROGRESS_BAR_WIDTH = 70;
 // initialize to DEFAULT values
 EratosthenesSieve::EratosthenesSieve(): ConsoleProgressBar(cout, PROGRESS_BAR_WIDTH) 
 {
-    m_OutputFileType = PRIMES_FILE_FORMAT::txt;
+    m_OutputFileType = PrimesFIO::PFF::txt;
     m_mode = CALC_MODE::optimized;
     m_realStart = DEFAULT_START;
     m_realLength = DEFAULT_LENGTH;
@@ -35,11 +35,11 @@ string EratosthenesSieve::getOutputFilename()
     
     switch (m_OutputFileType)
     {
-    case PRIMES_FILE_FORMAT::txt:       fname += ".txt";        break;
-    case PRIMES_FILE_FORMAT::txtdiff:   fname += ".diff.txt";   break;
-    case PRIMES_FILE_FORMAT::bin:       fname += ".bin";        break;
-    case PRIMES_FILE_FORMAT::bindiff:   fname += ".diff.bin";   break;
-    case PRIMES_FILE_FORMAT::bindiffvar:fname += ".diffvar.bin";break;
+    case PrimesFIO::PFF::txt:       fname += ".txt";        break;
+    case PrimesFIO::PFF::txtdiff:   fname += ".diff.txt";   break;
+    case PrimesFIO::PFF::bin:       fname += ".bin";        break;
+    case PrimesFIO::PFF::bindiff:   fname += ".diff.bin";   break;
+    case PrimesFIO::PFF::bindiffvar:fname += ".diffvar.bin";break;
     }
 
     return fname;
@@ -53,7 +53,7 @@ void EratosthenesSieve::Calculate()
     cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Length",F_WIDTH, m_realLength) << endl;
     cout << format(ERA::GetLoc(), "{:<{}}: {}", "Calculation algorithm", F_WIDTH, CALCMODE_TO_STR(m_mode)) << endl;
     cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Calculation threads", F_WIDTH, Parameters::THREADS) << endl;
-    cout << format("{:<{}}: {}", "Output file format", F_WIDTH, FORMAT_TO_STR(m_OutputFileType)) << endl;
+    cout << format("{:<{}}: {}", "Output file format", F_WIDTH, PrimesFIO::PFFToStr(m_OutputFileType)) << endl;
     cout << format("{:<{}}:'{}'", "Output file name", F_WIDTH, getOutputFilename()) << endl;
 
     switch (m_mode)
@@ -185,10 +185,10 @@ void EratosthenesSieve::loadPrimes()
     auto ft = PrimesFIO::GetFileType(Parameters::PRIMES_FILENAME);
     switch (ft)
     {
-    case PRIMES_FILE_FORMAT::bindiffvar: 
+    case PrimesFIO::PFF::bindiffvar:
         m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
-    case PRIMES_FILE_FORMAT::txt: 
+    case PrimesFIO::PFF::txt:
         m_readPrimes = loadPrimesFromTXTFile(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
     default:
@@ -298,8 +298,8 @@ void EratosthenesSieve::SetParams(string alg, string oft, string& start, string&
 
     TrimAndUpper(oft);
 
-    m_OutputFileType = STR_TO_FORMAT(oft);
-    if (m_OutputFileType == PRIMES_FILE_FORMAT::none)
+    m_OutputFileType = PrimesFIO::StrToPFF(oft);
+    if (m_OutputFileType == PrimesFIO::PFF::none)
         throw invalid_argument("Unsupported output file type specified: " + oft);
 
     if (!std::filesystem::exists(Parameters::PRIMES_FILENAME))
@@ -482,7 +482,7 @@ void EratosthenesSieve::calculate30nx()
 
     if (Parameters::THREADS > 1)
     {
-        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve*)
             {
                 assert(currPrime > 1);
                 assert(NPrime > 1);
@@ -948,11 +948,11 @@ void EratosthenesSieve::calculate30nx()
 
         switch (m_OutputFileType)
         {
-        case PRIMES_FILE_FORMAT::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT); break;
-        case PRIMES_FILE_FORMAT::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXTDiff, predTXTDiff); break;
-        case PRIMES_FILE_FORMAT::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN); break;
-        case PRIMES_FILE_FORMAT::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBINDiff, predBINDiff); break;
-        case PRIMES_FILE_FORMAT::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar); break;
+        case PrimesFIO::PFF::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT); break;
+        case PrimesFIO::PFF::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXTDiff, predTXTDiff); break;
+        case PrimesFIO::PFF::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN); break;
+        case PrimesFIO::PFF::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBINDiff, predBINDiff); break;
+        case PrimesFIO::PFF::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar); break;
         }
 
         cout << " Saved." << endl;
@@ -992,7 +992,7 @@ void EratosthenesSieve::calculate6n1()
 
     if (Parameters::THREADS > 1)
     {
-        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)
+        StrikeoutComposedPred predStrikeoutComposed = [this](uint64_t NPrime, uint64_t currPrime, EratosthenesSieve*)
             {
                 std::lldiv_t divres;
                 uint64_t index = 0;
@@ -1357,11 +1357,11 @@ void EratosthenesSieve::calculate6n1()
 
         switch (m_OutputFileType)
         {
-        case PRIMES_FILE_FORMAT::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT); break;
-        case PRIMES_FILE_FORMAT::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXTDiff, predTXTDiff); break;
-        case PRIMES_FILE_FORMAT::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN); break;
-        case PRIMES_FILE_FORMAT::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBINDiff, predBINDiff); break;
-        case PRIMES_FILE_FORMAT::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar); break;
+        case PrimesFIO::PFF::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT); break;
+        case PrimesFIO::PFF::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXTDiff, predTXTDiff); break;
+        case PrimesFIO::PFF::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN); break;
+        case PrimesFIO::PFF::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBINDiff, predBINDiff); break;
+        case PrimesFIO::PFF::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar); break;
         }
 
         cout << " Saved." << endl;
@@ -1637,12 +1637,12 @@ void EratosthenesSieve::calculateOptimum()
 
         switch (m_OutputFileType)
         {
-        case PRIMES_FILE_FORMAT::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT);break;
+        case PrimesFIO::PFF::txt:       primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXT);break;
             // predStart adds only one prime, that is why we do not need calculate diff there 
-        case PRIMES_FILE_FORMAT::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXTDiff);break;
-        case PRIMES_FILE_FORMAT::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN);break;
-        case PRIMES_FILE_FORMAT::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBIN, predBINDiff);break;
-        case PRIMES_FILE_FORMAT::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar);break;
+        case PrimesFIO::PFF::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStartTXT, predTXTDiff);break;
+        case PrimesFIO::PFF::bin:       primesSaved = saveAsBIN(outputFilename, predStartBIN, predBIN);break;
+        case PrimesFIO::PFF::bindiff:   primesSaved = saveAsBIN(outputFilename, predStartBIN, predBINDiff);break;
+        case PrimesFIO::PFF::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStartBINDiffVar, predBINDiffVar);break;
         }
 
         cout << " Saved." << endl;
@@ -1882,11 +1882,11 @@ void EratosthenesSieve::calculateSimple()
 
         switch (m_OutputFileType)
         {
-        case PRIMES_FILE_FORMAT::txt:       primesSaved = saveAsTXT(outputFilename, predStart, predTXT);break;
-        case PRIMES_FILE_FORMAT::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStart, predTXTDiff); break;
-        case PRIMES_FILE_FORMAT::bin:       primesSaved = saveAsBIN(outputFilename, predStart, predBIN);break;
-        case PRIMES_FILE_FORMAT::bindiff:   primesSaved = saveAsBIN(outputFilename, predStart, predBINDiff); break;
-        case PRIMES_FILE_FORMAT::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStart, predBINDiffVar);break;
+        case PrimesFIO::PFF::txt:       primesSaved = saveAsTXT(outputFilename, predStart, predTXT);break;
+        case PrimesFIO::PFF::txtdiff:   primesSaved = saveAsTXT(outputFilename, predStart, predTXTDiff); break;
+        case PrimesFIO::PFF::bin:       primesSaved = saveAsBIN(outputFilename, predStart, predBIN);break;
+        case PrimesFIO::PFF::bindiff:   primesSaved = saveAsBIN(outputFilename, predStart, predBINDiff); break;
+        case PrimesFIO::PFF::bindiffvar:primesSaved = saveAsBIN(outputFilename, predStart, predBINDiffVar);break;
         }
 
         cout << " Saved." << endl;
