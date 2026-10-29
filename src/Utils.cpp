@@ -60,8 +60,6 @@ void TrimAndUpper(std::string& str)
     transform(str.begin(), str.end(), str.begin(), ::mytoupper);
 }
 
-
-
 std::string StripFileExt(const std::string& FileName)
 {
     size_t i = FileName.length();
@@ -120,4 +118,14 @@ std::string GetCurrDateTimeAsString(void)
     return ss;
 }
 
+std::string RemoveApo(const std::string& str)
+{
+    std::string res;
+    res.reserve(str.size());
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if (str[i] != '\'') res += str[i];
+    }
 
+    return res;
+}
