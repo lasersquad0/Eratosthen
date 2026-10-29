@@ -28,10 +28,16 @@ EratosthenesSieve::EratosthenesSieve(): ConsoleProgressBar(cout, PROGRESS_BAR_WI
     m_prldPrimes = nullptr;
 };
 
-// makes output file name in format: primes - <start>-<length>.<format_ext>
+// makes output file name in format: primes - <start>-<length>.<alg>.<format_ext>
 string EratosthenesSieve::getOutputFilename()
 {
-    string fname = std::format("primes - {}{}-{}{}.{}", m_realStart / m_StartFactor, m_StartFactorSym, m_realLength / m_LengthFactor, m_LengthFactorSym, CALCMODE_TO_STR(m_mode));
+    string fname;
+    if (Parameters::OUTPUT_FOLDER.empty())
+        fname = std::format("primes - {}{}-{}{}.{}", 
+            m_realStart / m_StartFactor, m_StartFactorSym, m_realLength / m_LengthFactor, m_LengthFactorSym, CALCMODE_TO_STR(m_mode));
+    else
+        fname = std::format("{}\\primes - {}{}-{}{}.{}", Parameters::OUTPUT_FOLDER, 
+            m_realStart / m_StartFactor, m_StartFactorSym, m_realLength / m_LengthFactor, m_LengthFactorSym, CALCMODE_TO_STR(m_mode));
     
     switch (m_OutputFileType)
     {
