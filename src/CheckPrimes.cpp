@@ -8,13 +8,11 @@
 #include "Ticks.h"
 #include "CheckPrimes.h"
 #include "PrimesFIO.h"
-
+#include "BigInt.h"
 
 using namespace std;
 
-std::string RemoveApo(const std::string& str);
-
-#define NO_MORE_PRIMES (uint64_t)-1
+//#define NO_MORE_PRIMES (uint64_t)-1
 
 void CheckPrimesThread(CheckPrimes* cp)
 {
@@ -138,16 +136,16 @@ void CheckPrimes::Start(const string& fileName, uint8_t numThreads)
     cout << format("{:<{}}: {}", "Requested operation", F_WIDTH, "Check numbers from file") << endl;
     cout << format("{:<{}}: {}", "Number of threads", F_WIDTH, numThreads) << endl;
 
-    PRIMES_FILE_FORMAT frmt = PrimesFIO::GetFileType(fileName);
-    if(frmt == PRIMES_FILE_FORMAT::none)
+    auto frmt = PrimesFIO::GetFileType(fileName);
+    if(frmt == PrimesFIO::PFF::none)
         throw invalid_argument(std::format("Error: cannot recognize file format '{}'.", fileName));
     
     cout << format("{:<{}}:'{}'", "File with numbers to check", F_WIDTH, fileName) << endl;
 
-    string tp = FORMAT_TO_STR(frmt);
+    string tp = PFFToStr(frmt);
     cout << format(ERA::GetLoc(), "{:<{}}: {}", "File format", F_WIDTH, tp) << endl;
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Primes will be checked", F_WIDTH, m_capacity) << endl;
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Primes offset", F_WIDTH, m_offset) << endl;
+    cout << format(ERA::GetLoc(), "{:<{}}: {}", "Primes asked to be checked", F_WIDTH, m_limitPrimes == 0? "<unlimited>" : format(ERA::GetLoc(), "{:L}", m_limitPrimes)) << endl;
+    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Primes start offset", F_WIDTH, m_offset) << endl;
     
     fstream f;
     f.open(fileName, ios::in | ios::binary);
@@ -155,7 +153,6 @@ void CheckPrimes::Start(const string& fileName, uint8_t numThreads)
         throw invalid_argument("Error: cannot open file '" + fileName + "'\n");
  
     BuferedFileStream bfs(f);
-    PrimesFIO pf;
     uint64_t lastPrime = 0;
 
     cout << "Loading numbers from file ..." << "\r";
@@ -164,31 +161,32 @@ void CheckPrimes::Start(const string& fileName, uint8_t numThreads)
 
     switch (frmt)
     {
-    case PRIMES_FILE_FORMAT::txt:        m_loadedPrimes = pf.LoadFromTXT(m_primes, m_capacity, f); break;
-    case PRIMES_FILE_FORMAT::bin:        m_loadedPrimes = pf.LoadFromBIN(m_primes, m_capacity, f); break;
-    case PRIMES_FILE_FORMAT::txtdiff:    m_loadedPrimes = pf.LoadFromTXTDiff(m_primes, m_capacity, lastPrime, f); break;
-    case PRIMES_FILE_FORMAT::bindiff:    m_loadedPrimes = pf.LoadFromBINDiff(m_primes, m_capacity, lastPrime, f); break;
-    case PRIMES_FILE_FORMAT::bindiffvar: m_loadedPrimes = pf.LoadFromBINDiffVar(m_primes, m_capacity, lastPrime, bfs); break;
-    case PRIMES_FILE_FORMAT::none: throw invalid_argument(std::format("Error: cannot recognize file format '{}'.", fileName)); break;
+    case PrimesFIO::PFF::txt:        m_loadedPrimes = PrimesFIO::LoadFromTXT(m_primes, m_capacity, f); break;
+    case PrimesFIO::PFF::bin:        m_loadedPrimes = PrimesFIO::LoadFromBIN(m_primes, m_capacity, f); break;
+    case PrimesFIO::PFF::txtdiff:    m_loadedPrimes = PrimesFIO::LoadFromTXTDiff(m_primes, m_capacity, lastPrime, f); break;
+    case PrimesFIO::PFF::bindiff:    m_loadedPrimes = PrimesFIO::LoadFromBINDiff(m_primes, m_capacity, lastPrime, f); break;
+    case PrimesFIO::PFF::bindiffvar: m_loadedPrimes = PrimesFIO::LoadFromBINDiffVar(m_primes, m_capacity, lastPrime, bfs); break;
+    case PrimesFIO::PFF::none: throw invalid_argument(std::format("Error: cannot recognize file format '{}'.", fileName)); break;
     }
 
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Numbers loaded", F_WIDTH, m_loadedPrimes);
-    if (m_loadedPrimes == m_capacity)
+    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Primes actually loaded", F_WIDTH, m_loadedPrimes);
+    
+    if (m_limitPrimes == 0 && m_loadedPrimes == m_capacity)
         cout << " (not all numbers loaded from a file, use -l option to load more numbers)" << endl;
     else
         cout << endl;
 
     cout << format("{:<{}}: {}", "File loading time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("preload"))) << endl;
 
-    Ticks::Start("checkprimes");
+    Ticks::Start("verifyprimes");
 
     m_start = chrono::high_resolution_clock::now();
     m_end = m_primes + m_loadedPrimes;
     m_currIndex = m_offset;
     checkPrimesInThreads(numThreads); // waits till all threads finish
     
-    cout << format("{:<{}}: {}", "Primes Checking Time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("checkprimes"))) << endl;
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L} primes/sec", "Average Speed", F_WIDTH, m_loadedPrimes * 1000 / Ticks::GetTick("checkprimes")) << endl;
+    cout << format("{:<{}}: {}", "Primes Checking Time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("verifyprimes"))) << endl;
+    cout << format(ERA::GetLoc(), "{:<{}}: {:L} primes/sec", "Average Speed", F_WIDTH, m_loadedPrimes * 1000 / Ticks::GetTick("verifyprimes")) << endl;
 
     if (m_compound.size() == 0)
     {
@@ -200,39 +198,85 @@ void CheckPrimes::Start(const string& fileName, uint8_t numThreads)
         for (auto item : m_compound)
             cout << format(ERA::GetLoc(), "  {:L} | min divider {:L}", item.first, item.second) << endl;
     }
+
+    cout << format("{:<{}}: {}", "Time Spent", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("verifyprimes"))) << endl;
 }
 
-void CheckPrimes::CheckPrimesArray(const std::vector<std::string>& primes)
+int callbackImpl(const BigInt& curr, const BigInt& max)
+{
+    cout << "Progress... " << (float)toUInt64(curr * 100'0000ull / max)/10'000ull << "%      \r";
+    return CALLBACK_OK;
+}
+
+void CheckPrimes::CheckPrimesArray(const std::vector<std::string>& primes, bool forceBigInt)
 {
     cout << format("{:<{}}: {}", "Requested operation", F_WIDTH, "Check numbers from command line") << endl;
-    cout << format("{:<{}}: {}", "Number of threads", F_WIDTH, 1) << endl;
+    cout << format("{:<{}}: {}", "Numbers to check", F_WIDTH, primes.size()) << endl;
+
+    Ticks::Start("checkprimes");
 
     uint64_t compCnt = 0;
     uint64_t errCnt = 0;
     for (auto& sprime : primes)
     {
-        try
+        string ssprime = RemoveApo(sprime);
+
+        if (forceBigInt)
         {
-            string ssprime = RemoveApo(sprime);
-            uint64_t prime = stoull(ssprime);
-            auto div = isPrimeNumber30(prime);
-            if (div > 0)
+            BigInt bprime(ssprime);
+            BigInt bdiv = bprime.isPrimeNumber30(callbackImpl);
+            if (bdiv > BigInt::ZERO)
             {
-                cout << std::format(ERA::GetLoc(), "{:L} - compound, min divider {:L}", prime, div) << endl;
+                cout << std::format(ERA::GetLoc(), "{:L} - compound, min divider {:L}", bprime, bdiv) << endl;
                 ++compCnt;
             }
         }
-        catch (...)
+        else
         {
-            cout << std::format("'{}' is not a number or out of range, bypassing it", sprime) << endl;
-            ++errCnt;
+            uint64_t prime = 0;
+            auto [ptr, ec] = std::from_chars(ssprime.data(), ssprime.data() + ssprime.size(), prime);
+
+            if (ec == std::errc{}) // success and fit into uint64_t
+            {
+                auto div = isPrimeNumber30(prime);
+                if (div > 0)
+                {
+                    cout << std::format(ERA::GetLoc(), "{:L} - compound, min divider {:L}", prime, div) << endl;
+                    ++compCnt;
+                }
+            }
+            else if (ec == std::errc::invalid_argument)
+            {
+                cout << std::format("'{}' is not a number, bypassing it", sprime) << endl;
+                ++errCnt;
+            }
+            // number is large use BigInt
+            else if (ec == std::errc::result_out_of_range)
+            {
+                BigInt bprime(ssprime);
+                BigInt bdiv = bprime.isPrimeNumber30(callbackImpl);
+                if (bdiv > BigInt::ZERO)
+                {
+                    cout << std::format(ERA::GetLoc(), "{:L} - compound, min divider {:L}", bprime, bdiv) << endl;
+                    ++compCnt;
+                }
+            }
         }
     }
 
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Count of checked numbers", F_WIDTH, primes.size()) << endl;
-    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Count of compound numbers", F_WIDTH, compCnt) << endl;
+    cout << string(50, ' ') << "\r";
+
+    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Prime Numbers", F_WIDTH, primes.size() - compCnt - errCnt) << endl;
+    cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Compound Numbers", F_WIDTH, compCnt) << endl;
     if(errCnt > 0)
-        cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Count of error numbers", F_WIDTH, errCnt) << endl;
+        cout << format(ERA::GetLoc(), "{:<{}}: {:L}", "Bypased Numbers", F_WIDTH, errCnt) << endl;
+
+    cout << format("{:<{}}: {}", "Time Spent", F_WIDTH, MillisecToStr<string>(Ticks::Finish("checkprimes"))) << endl;
+    if(primes.size() * 1000 / Ticks::GetTick("checkprimes") == 0)
+        cout << format(ERA::GetLoc(), "{:<{}}: {}", "Avg time for one number", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("checkprimes")/(primes.size()))) << endl;
+    else
+        cout << format(ERA::GetLoc(), "{:<{}}: {:L} primes/sec", "Average Speed", F_WIDTH, primes.size() * 1000 / Ticks::GetTick("checkprimes")) << endl;
+    cout << format("{:<{}}: {}", "Time spent", F_WIDTH, MillisecToStr<string>(Ticks::GetTick("checkprimes"))) << endl;
 }
 
 // return 0 means 'no dividers' - number is prime
@@ -280,22 +324,27 @@ uint64_t CheckPrimes::isPrimeNumber6(uint64_t number)
 // any other value is a divider of prime
 uint64_t CheckPrimes::isPrimeNumber30(uint64_t number)
 {
-    if ((number == 2) || (number == 3) || (number == 5)) 
-        return 0;
+    // 0 in array means prime number (zero dividers)
+    // non zero means smallest delimiter
+    const uint64_t known[30]{ 1,1,0,0,2,0,2,0,2,3,2,0,2,0,2,3,2,0,2,0,2,3,2,0,2,5,2,3,2,0 };
+    
+    if (number < 30) return known[number];
+    //if ((number == 2) || (number == 3) || (number == 5)) 
+    //    return 0;
 
     uint64_t middle = (uint64_t)sqrt(number) + 1;
 
     if ((number & 0x01) == 0) return 2;
     if ((number % 3) == 0) return 3;
     if ((number % 5) == 0) return 5; 
-    /*if ((number % 7) == 0) return 7; 
+    if ((number % 7) == 0) return 7; 
     if ((number % 11) == 0) return 11; 
     if ((number % 13) == 0) return 13; 
     if ((number % 17) == 0) return 17;
     if ((number % 19) == 0) return 19;
     if ((number % 23) == 0) return 23;
     if ((number % 29) == 0) return 29;
-    */
+    
     for (uint64_t i = 30; i < middle; i += 30)
     {
         if (number % (i + 1) == 0) return i + 1;
@@ -311,14 +360,3 @@ uint64_t CheckPrimes::isPrimeNumber30(uint64_t number)
     return 0;
 }
 
-std::string RemoveApo(const std::string& str)
-{
-    std::string res;
-    res.reserve(str.size());
-    for (size_t i = 0; i < str.length(); i++)
-    {
-        if (str[i] != '\'') res += str[i];
-    }
-
-    return res;
-}
