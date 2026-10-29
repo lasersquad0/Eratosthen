@@ -60,6 +60,9 @@
     <ClCompile Include="src\BigInt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="external\utils\src\string_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CheckPrimes.h">
@@ -90,6 +93,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external\utils\include\string_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external\utils\include\Ticks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
