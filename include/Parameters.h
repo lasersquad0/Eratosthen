@@ -17,6 +17,7 @@ public:
 	static bool SAVEFILE;
 	static uint64_t LIMIT_PRIMES;
 	static uint64_t OFFSET_PRIMES;
+	static std::string OUTPUT_FOLDER;
 };
 
 
