@@ -32,9 +32,8 @@ inline char mytoupper(int c) // to eliminate compile warning "warning C4244: '='
 size_t GetMemoryUsage();
 void PrintMemoryUsage();
 
-void Trim(std::string& str);
-void TrimAndUpper(std::string& str);
-std::string StripFileExt(const std::string& FileName);
+//void Trim(std::string& str);
+//void TrimAndUpper(std::string& str);
 std::string RemoveApo(const std::string& str);
 
 struct tm time_t_to_tm(const time_t t);

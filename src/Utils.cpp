@@ -39,7 +39,7 @@ void PrintMemoryUsage()
 
 }
 
-void Trim(std::string& str) // str passed by value here intentionally
+/*void Trim(std::string& str) // str passed by value here intentionally
 {
     // remove any leading and traling spaces tabs.
     size_t strBegin = str.find_first_not_of(" \t");
@@ -48,7 +48,7 @@ void Trim(std::string& str) // str passed by value here intentionally
     size_t strEnd = str.find_last_not_of(" \t");
     assert(strEnd != std::string::npos);
 
-    str.erase(strEnd + 1 /*, str.size() - strEnd*/);
+    str.erase(strEnd + 1);
     str.erase(0, strBegin);
 }
 
@@ -85,7 +85,7 @@ std::string StripFileExt(const std::string& FileName)
     else
         return FileName;
 }
-
+*/
 
 void PrintTime(const std::string& msg)
 {
