@@ -154,6 +154,7 @@
     <ClCompile Include="external\cli\Option.cpp" />
     <ClCompile Include="external\cli\OptionsList.cpp" />
     <ClCompile Include="external\utils\src\PrimesFIO.cpp" />
+    <ClCompile Include="src\BigInt.cpp" />
     <ClCompile Include="src\CheckPrimes.cpp" />
     <ClCompile Include="src\EratosthenesSieve.cpp" />
     <ClCompile Include="src\FileConverter.cpp" />
