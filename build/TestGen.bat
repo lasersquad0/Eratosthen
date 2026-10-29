@@ -1,6 +1,8 @@
 goto :start
+
 ----------------------------------
-Test all primes generating algorithms (simple, optimised, 6n1, n30x) and all output formats with a specified range (start-length).
+Tests all primes generating algorithms (simple, optimum, 6n1, 30nx) together with all output formats.
+with a specified range (start-length).
 This test runs Eratosthen.exe for each pair algorithm-output_format and compares output files. 
 All algorithms must generate equal files for each output format.
 ----------------------------------
@@ -9,21 +11,16 @@ All algorithms must generate equal files for each output format.
 @echo off
 setlocal EnableDelayedExpansion
 
-rem set START=0
-@set STARTS=0b 1b 2b 3b 4b 5b 6b 7b 8b 9b 1001b 1K 100K 100001b 100002b
+set STARTS=0b 1b 2b 3b 4b 5b 6b 7b 8b 9b 1001b 1K 100K 100001b 100002b
 set LEN=1m
 set TESTSFOLDER=tests
 
 rem Also test custom name for files with precalculated prime numbers
-set OPT_P=-p "PRE-CALC PRIMES.diffvar.bin"
+set OPT=-o %TESTSFOLDER% -p "PRE-CALC PRIMES.diffvar.bin"
 
 mkdir %TESTSFOLDER%
 
-copy /Y ..\x64\Debug\Eratosthen.exe %TESTSFOLDER%
-
-rem remporarily go to tests folder to run eratosthen.exe there
-cd %TESTSFOLDER%
-
+copy /Y ..\x64\Release\Eratosthen.exe .
 
 set FORMAT[0]=txt
 set FORMAT[1]=txtdiff
@@ -48,21 +45,21 @@ for /L %%i in (0,1,4) do (
    echo --------------------
    
    echo Testing Format: !FORMAT!
-   echo Generating primes using params: %%k %LEN% %OPT_P%
+   echo Generating primes using params: %%k %LEN% %OPT%
 
-   Eratosthen.exe -s !FORMAT!  %%k %LEN% %OPT_P% >>devnull
+   Eratosthen.exe -g simple !FORMAT! %%k %LEN% %OPT% >>devnull
    if errorlevel 1 echo ******** Eratosthen.exe exited with ERROR *******
-   Eratosthen.exe -o !FORMAT!  %%k %LEN% %OPT_P% >>devnull
+   Eratosthen.exe -g optimum !FORMAT!  %%k %LEN% %OPT% >>devnull
    if errorlevel 1 echo ******** Eratosthen.exe exited with ERROR *******
-   Eratosthen.exe -6 !FORMAT!  %%k %LEN% %OPT_P% >>devnull
+   Eratosthen.exe -g 6n1 !FORMAT!  %%k %LEN% %OPT% >>devnull
    if errorlevel 1 echo ******** Eratosthen.exe exited with ERROR *******
-   Eratosthen.exe -30 !FORMAT! %%k %LEN% %OPT_P% >>devnull
+   Eratosthen.exe -g 30nx !FORMAT! %%k %LEN% %OPT% >>devnull
    if errorlevel 1 echo ******** Eratosthen.exe exited with ERROR *******
 
-   set FILE1="!FILE!.simple.!EXT!"
-   set FILE2="!FILE!.opt.!EXT!"  
-   set FILE3="!FILE!.6n1.!EXT!"  
-   set FILE4="!FILE!.n30x.!EXT!"  
+   set FILE1="%TESTSFOLDER%\!FILE!.simple.!EXT!"
+   set FILE2="%TESTSFOLDER%\!FILE!.optimum.!EXT!"  
+   set FILE3="%TESTSFOLDER%\!FILE!.6n1.!EXT!"  
+   set FILE4="%TESTSFOLDER%\!FILE!.30nx.!EXT!"  
 
    echo Done
    echo -  
@@ -83,8 +80,6 @@ for /L %%i in (0,1,4) do (
 )
 )
 
-rem return back to the main folder (where we started)
-cd ..
 
 
 
