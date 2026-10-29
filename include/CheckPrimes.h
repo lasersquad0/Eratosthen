@@ -31,10 +31,11 @@ private:
 
 	uint64_t* m_primes{};   // array of loaded m_loadedPrimes primes
 	uint64_t* m_end{};
-	size_t m_capacity = 0;  // size of m_primes array
+	size_t m_capacity;  // size of m_primes array
 	size_t m_loadedPrimes = 0; // actual number of loaded primes from a file
 	std::atomic_uint64_t m_currIndex = 0;
-	uint64_t m_offset = 0;
+	uint64_t m_offset;
+	uint64_t m_limitPrimes;
 	std::chrono::steady_clock::time_point m_start;
 protected:
 	uint64_t* nextPrime(uint64_t count);
@@ -44,7 +45,7 @@ protected:
 	static uint64_t isPrimeNumber30(uint64_t number);
 	void checkPrimesInThreads(uint8_t numThreads);
 public:
-	//static const size_t DEFAULT_LIMIT_PRIMES = 150'000'000; // default max number of primes to be processed
+	static const size_t MAX_PRIMES_TO_STORE = 200'000'000; // default max number of primes that can be processed
 	//static const size_t DEFAULT_OFFSET = 0; // used when we need to start checking primes from middle of the file
 	//static const uint8_t DEFAULT_THREADS = 4;
 
@@ -55,15 +56,15 @@ public:
 	std::vector<std::pair<uint64_t, uint64_t>> m_compound;
 	//std::osyncstream syncout;
 
-	CheckPrimes(size_t count, size_t offset)//: syncout(std::cout)
+	CheckPrimes(size_t limitPrimes, size_t offset)//: syncout(std::cout)
 	{
-		assert(count > 0);
-		//count = count == 0 ? DEFAULT_LIMIT_PRIMES : count;
-		m_primes = static_cast<uint64_t*>(allocate_aligned(std::hardware_destructive_interference_size, count*sizeof(uint64_t)));
+		assert(limitPrimes > 0);
+		assert(offset < limitPrimes);
+		m_capacity = limitPrimes == 0 ? MAX_PRIMES_TO_STORE : std::min(limitPrimes, MAX_PRIMES_TO_STORE);
+		m_primes = static_cast<uint64_t*>(allocate_aligned(std::hardware_destructive_interference_size, m_capacity*sizeof(uint64_t)));
 		assert(m_primes);
-		m_capacity = count;
-		assert(offset < count);
 		m_offset = offset;
+		m_limitPrimes = limitPrimes;
 	}
 
 	~CheckPrimes()
@@ -72,7 +73,7 @@ public:
 	}
 
 	void Start(const std::string& fileName, uint8_t numThreads /*= DEFAULT_THREADS*/);
-	static void CheckPrimesArray(const std::vector<std::string>& primes);
+	static void CheckPrimesArray(const std::vector<std::string>& primes, bool forceBigInt = false);
 	
 };
 
