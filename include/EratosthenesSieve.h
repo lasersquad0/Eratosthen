@@ -47,7 +47,7 @@ private:
 
 	uint64_t m_StartFactor = FACTOR_G; // default value is G. will be overwriten by actual factor value from requested range.
 	uint64_t m_LengthFactor = FACTOR_G;
-	PRIMES_FILE_FORMAT m_OutputFileType; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
+	PrimesFIO::PFF m_OutputFileType; // 1-just txt file no diff.  2-txt file with diff. 3 - bin file no diff. 4-bin file with diff. 5-bin file with variable diff
 	
 	CALC_MODE m_mode;
 	uint64_t m_realStart;  
