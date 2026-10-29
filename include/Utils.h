@@ -3,7 +3,7 @@
 #include <string>
 
 // field width for printing various results to console
-const uint32_t F_WIDTH = 22;
+const uint32_t F_WIDTH = 27;
 
 namespace ERA
 {
@@ -35,6 +35,7 @@ void PrintMemoryUsage();
 void Trim(std::string& str);
 void TrimAndUpper(std::string& str);
 std::string StripFileExt(const std::string& FileName);
+std::string RemoveApo(const std::string& str);
 
 struct tm time_t_to_tm(const time_t t);
 struct tm GetCurrDateTime();
