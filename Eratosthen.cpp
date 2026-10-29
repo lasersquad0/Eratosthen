@@ -20,11 +20,13 @@ using namespace std;
 #define OPT_V "v"  // verify primes
 #define OPT_C "c"  // convert
 #define OPT_P "p"  // file to preload
-#define OPT_O "o"  // offset
+#define OPT_O "o"  // output folder
 #define OPT_L "l"  // limit
 #define OPT_T "t"  // threads
 #define OPT_H "h"  // help
 #define OPT_N "n"  // do not save generated primes to file
+#define OPT_B "b"  // force BigInt
+#define OPT_I "i"  // ignore first X primes
 
 static void DefineOptions(COptionsList& options);
 static void PrintUsage();
@@ -65,27 +67,32 @@ int main(int argc, char* argv[])
 
     if (cmd.HasOption(OPT_P))
     {
-        Parameters::PRIMES_FILENAME = cmd.GetOptionValue("p", 0, Pre_Loaded_Primes_Filename);
+        Parameters::PRIMES_FILENAME = cmd.GetOptionValue(OPT_P, 0, Pre_Loaded_Primes_Filename);
     }
     if (cmd.HasOption(OPT_N))
     {
         Parameters::SAVEFILE = false; // do not save file, only generate primes
     }
+    if (cmd.HasOption(OPT_O))
+    {
+        Parameters::OUTPUT_FOLDER = cmd.GetOptionValue(OPT_O);
+    }
+
+    // default threads value depends on requested operation: generate=1thr, verify=4thrs
+    Parameters::THREADS = cmd.HasOption(OPT_G) ? DEFAULT_G_THREADS : cmd.HasOption(OPT_V) ? DEFAULT_V_THREADS : DEFAULT_G_THREADS;
     if (cmd.HasOption(OPT_T))
     {
         try
         {
-            Parameters::THREADS = (uint8_t)stoul(cmd.GetOptionValue(OPT_T));
-            if ( (Parameters::THREADS == 0) || (Parameters::THREADS > 25) )
-            {
-                cout << "Number of threads is out of bounds (1...25). Using default value " << DEFAULT_THREADS << "." << endl;
-                Parameters::THREADS = DEFAULT_THREADS;
-            }
+            uint8_t threads = (uint8_t)stoul(cmd.GetOptionValue(OPT_T));
+            if ( (threads == 0) || (threads > 25) )
+                cout << "Number of threads (" << cmd.GetOptionValue(OPT_T) << ") is out of bounds (1...25). Using default value " << Parameters::THREADS << "." << endl;
+            else
+                Parameters::THREADS = threads;
         }
         catch (...) 
         {
-            cout << "Incorrect number of threads specified '" << cmd.GetOptionValue(OPT_T) <<"'. Using default value " << DEFAULT_THREADS << "." << endl;
-            Parameters::THREADS = DEFAULT_THREADS;
+            cout << "Incorrect number of threads specified '" << cmd.GetOptionValue(OPT_T) <<"'. Using default value " << Parameters::THREADS << "." << endl;
         }
     }
 
@@ -102,14 +109,14 @@ int main(int argc, char* argv[])
         }
 
         //uint64_t offsetPrimes = CheckPrimes::DEFAULT_OFFSET; //TODO shall we allow suffixes K,M,G,T,P here?
-        if (cmd.HasOption(OPT_O))
+        if (cmd.HasOption(OPT_I))
             try
             {
-                Parameters::OFFSET_PRIMES = stoull(cmd.GetOptionValue(OPT_O));
+                Parameters::OFFSET_PRIMES = stoull(cmd.GetOptionValue(OPT_I));
             }
             catch (...)
             {
-                cout << "Incorrect primes offset is specified '" << cmd.GetOptionValue(OPT_O) << "'. Using default value " << DEFAULT_OFFSET_PRIMES << "." << endl << endl;
+                cout << "Incorrect primes offset is specified '" << cmd.GetOptionValue(OPT_I) << "'. Using default value " << DEFAULT_OFFSET_PRIMES << "." << endl << endl;
                 Parameters::OFFSET_PRIMES = DEFAULT_OFFSET_PRIMES;
             }
 
@@ -117,6 +124,10 @@ int main(int argc, char* argv[])
     {
         PrintUsage();
     }
+
+    //////////////////////////////////////
+    // Processing commands here
+    //////////////////////////////////////
 
     try
     {
@@ -141,24 +152,21 @@ int main(int argc, char* argv[])
                 // size of array to be allocated for primes loaded from a file
                 // if file contains more primes, only DEF_PRIMES_TO_CHECK will be checked still.
                 //TODO think how to avoid this constraint
-                const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
+                //const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
 
                 if (cmd.GetOption(OPT_V)->GetArgs().size() > 1) // cannot mix file and primes in one command line for -v, + only one file can be specified
                     throw invalid_argument("Command -v: Cannot mix file name and primes in one command line. also only one file can be specified for this command.");
             
-                uint64_t numPrimesToCheck = Parameters::LIMIT_PRIMES == 0 ? DEF_PRIMES_TO_CHECK : Parameters::LIMIT_PRIMES;
-                CheckPrimes pr(numPrimesToCheck, Parameters::OFFSET_PRIMES);
+                //uint64_t numPrimesToCheck = Parameters::LIMIT_PRIMES == 0 ? DEF_PRIMES_TO_CHECK : Parameters::LIMIT_PRIMES;
+                CheckPrimes pr(Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
                 pr.Start(firstArg.substr(1), Parameters::THREADS);
-
-                //cout << format("{:<{}}: {}", "Primes check time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("start"))) << endl;
 
             }
             else // check list of primes from command line
             {
                 auto& vs = cmd.GetOptionValues(OPT_V);
 
-                CheckPrimes::CheckPrimesArray(vs);
-                //cout << format("{:<{}}: {}", "Primes check time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("start"))) << endl;
+                CheckPrimes::CheckPrimesArray(vs, cmd.HasOption(OPT_B));
             }
         }
         else if (cmd.HasOption(OPT_C))
@@ -168,8 +176,6 @@ int main(int argc, char* argv[])
 
             FileConverter fc;
             fc.Convert(fromTo, filename, Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
-
-           // cout << format("{:<{}}: {}", "Conversion time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("start"))) << endl;
         }
         else
         {
@@ -179,7 +185,7 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-
+        cout << "Done" << endl;
 
         _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
         _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
@@ -238,13 +244,15 @@ static void DefineOptions(COptionsList& options)
         "Accepted 'from-to' formats: txt, txdiff, bin, bindiff, bindiffvar.\n"
         "Special cases: 'bin-bin' and 'bindiffvar-bindiffvar'.", 2);
     options.AddOption(OPT_P, "preload", string("Specify file with primes to preload. If not specified then default '") + Pre_Loaded_Primes_Filename + "' file name is used", 1);
-    options.AddOption(OPT_O, "offset", "Start processing prime numbers from specified offset.\n"
+    options.AddOption(OPT_I, "ignore", "Ignore first <num> primes before starting checking for primality.\n"
         "Offset is a number of primes to bypass before start processing.\n"
         "Works with both -c and -v commands.", 1);
     options.AddOption(OPT_L, "limit", "Process specified number of prime numbers only. Works with both -c and -v commands.", 1);
     options.AddOption(OPT_T, "threads", "Use specified number of threads during primes generating and verifying", 1);
     options.AddOption(OPT_H, "help", "Show info about command line arguments.", 0);
     options.AddOption(OPT_N, "nofile", "Do not save file, generate prime numbers only. Works with -g command and used mostly for measuring calculation metrics.", 0);
+    options.AddOption(OPT_B, "bigint", "Force use BigInt arithmetic for verifying numbers.", 0);
+    options.AddOption(OPT_O, "outfolder", "Output folder where resulting file will be placed. Folder should exist before running app.", 1);
 
     options.MutuallyExclusive(OPT_G, OPT_V, OPT_C);
 }
@@ -284,8 +292,9 @@ static void PrintUsage()
     cout << "                        If not specified then default name 'primes - 0-1G.diffvar.bin' is used." << endl;
     cout << "  -t, --threads <num>   Use specified number of threads for generating primes." << endl;
     cout << "  -l, --limit   <num>   Only <num> primes from file will be checked for primality." << endl;
-    cout << "  -o, --offset  <num>   <num> primes will be bypassed in a file before start checking for primality. " << endl;
+    cout << "  -i, --ignore  <num>   First <num> primes will be ignored (bypassed) in a file before start checking for primality. " << endl;
     cout << "  -n, --nofile          Do not save file, only generate numbers. Used mostly for measuring generating metrics." << endl;
+    cout << "  -o, --outfolder       Output folder where resulting file will be placed. Folder should exist before running app." << endl;
 
     cout << endl << "Examples" << endl;
     cout << "  " << ERA::APP_EXE_NAME << " -g optimum txt 0 10g" << endl;
