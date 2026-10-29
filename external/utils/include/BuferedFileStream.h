@@ -20,6 +20,7 @@ public:
     virtual bool Eof() = 0;
     virtual bool ReadByte(uint8_t& data) = 0; // true if byte has read successfully
     virtual uint64_t Read(uint8_t* buffer, uint64_t count) = 0; // returns number of bytes actually read, can be less than count parameter
+    virtual uint64_t Pos() = 0;
 };
 
 // load file data into memory by big chunks increase io operations that way.
@@ -41,7 +42,7 @@ private:
     // returns false if it was not able to make count bytes available in the buffer (but less than count bytes may still be available in buffer for further reading)
     bool fetchmore(uint64_t count)
     {
-        if (count > uint64_t(m_pend - m_pnext)) // whether buffered count bytes are available in the buffer
+        if (count > uint64_t(m_pend - m_pnext)) // whether count bytes are available in the buffer
         {
             assert(count <= BUFFER_SIZE);
             if (m_filestream->eof())
@@ -149,6 +150,11 @@ public:
     bool Eof() override
     {
         return m_eof;
+    }
+
+    uint64_t Pos() override
+    {
+        return m_filestream->tellg();
     }
 
     bool ReadByte(uint8_t& data) override
