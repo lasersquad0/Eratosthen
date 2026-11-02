@@ -7,7 +7,8 @@
 
 #include "string_utils.h"
 #include "Utils.h"
-#include "DefaultParser.h"
+#include "cli/DefaultParser.h"
+#include "LogEngine2/LogEngine.h"
 #include "EratosthenesSieve.h"
 #include "Parameters.h"
 #include "FileConverter.h"
@@ -31,17 +32,40 @@ using namespace std;
 static void DefineOptions(COptionsList& options);
 static void PrintUsage();
 
+// this function is called ONLY when .lfg file cannot be found or error during parsing .lfg file
+static void InitDefaultLogger()
+{
+    //std::shared_ptr<LogEngine::Sink> consoleSink(new LogEngine::StdoutSinkST("console_sink"));
+    //consoleSink->SetPattern("%msg%");
+    std::shared_ptr<LogEngine::Sink> fileSink(new LogEngine::FileSinkST("file_sink", ERA::LOGFILE_NAME));
+    fileSink->SetPattern("%thread% %msg%");
+
+    // get multithreaded logger that does sync is called from multiple threads
+    LogEngine::Logger& logger = LogEngine::GetMultiLogger(ERA::LOGGER_NAME, {fileSink});
+    logger.SetLogLevel(LogEngine::llInfo); // set log level for logger and all its sinks.
+    logger.Imbue(ERA::GetLoc());
+}
+
 int main(int argc, char* argv[])
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     _CrtMemState s1, s2, s3;
     _CrtMemCheckpoint(&s1); // Take a snapshot at the start of main()
 
-    ERA::APP_EXE_NAME = argv[0]; // this statement needs to be before first possible call of PrintUsage().
-    ERA::APP_NAME = StripFileExt(argv[0]);
+    try
+    {
+
+    ERA::APP_EXE_NAME = ExtractFileName(argv[0]); // this statement needs to be before first possible call of PrintUsage().
+    ERA::APP_NAME = StripFileExt(ERA::APP_EXE_NAME);
+    ERA::LOGGER_NAME = ERA::APP_NAME;
+    ERA::LOGFILE_NAME = ERA::APP_NAME + "Log.log";
+
+    InitDefaultLogger();
+
+    GET_LOGGER;
+    logger.Info("Eratosthen logging has STARTED.");
 
     cout.imbue(ERA::GetLoc());
-    //cout.imbue(locale(cout.getloc(), new MyGroupSeparator));
 
     CDefaultParser defaultParser;
     CCommandLine cmd;
@@ -129,8 +153,7 @@ int main(int argc, char* argv[])
     // Processing commands here
     //////////////////////////////////////
 
-    try
-    {
+
         if (cmd.HasOption(OPT_G))
         {
             string alg    = cmd.GetOptionValue(OPT_G, 0);
@@ -149,9 +172,7 @@ int main(int argc, char* argv[])
 
             if (firstArg[0] == '@') // file name specified, checking primes from file then
             {
-                // size of array to be allocated for primes loaded from a file
-                // if file contains more primes, only DEF_PRIMES_TO_CHECK will be checked still.
-                //TODO think how to avoid this constraint
+               
                 //const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
 
                 if (cmd.GetOption(OPT_V)->GetArgs().size() > 1) // cannot mix file and primes in one command line for -v, + only one file can be specified
@@ -186,6 +207,7 @@ int main(int argc, char* argv[])
         }
 
         cout << "Done" << endl;
+        logger.Info("Eratosthen logging has FINISHED.");
 
         _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
         _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
