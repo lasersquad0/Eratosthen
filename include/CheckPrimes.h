@@ -45,14 +45,13 @@ protected:
 	static uint64_t isPrimeNumber30(uint64_t number);
 	void checkPrimesInThreads(uint8_t numThreads);
 public:
+	// size of array to be allocated for primes loaded from a file
+	// if file contains more primes, only MAX_PRIMES_TO_STORE will be checked still.
+	//TODO think how to avoid this constraint
 	static const size_t MAX_PRIMES_TO_STORE = 200'000'000; // default max number of primes that can be processed
-	//static const size_t DEFAULT_OFFSET = 0; // used when we need to start checking primes from middle of the file
-	//static const uint8_t DEFAULT_THREADS = 4;
-
+	
 	std::mutex m_mutex;
 	std::atomic_uint m_threadIDs = 0;
-	//uint32_t m_progressUpdated = 0;
-	//uint64_t m_limitPrimes = 0;
 	std::vector<std::pair<uint64_t, uint64_t>> m_compound;
 	//std::osyncstream syncout;
 
