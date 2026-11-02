@@ -45,7 +45,6 @@ struct LoadPrimesResult
 
 	PRIMES_FILE_FORMAT GetFileType(const std::string& fileName);
 
-	//TODO make all these methods static???
 	LoadPrimesResult LoadFromTXT(std::fstream& f, uint64_t* arr, size_t len);
 	LoadPrimesResult LoadFromTXTDiff(std::fstream& f, uint64_t* arr, size_t len, uint64_t& lastPrime);
 	LoadPrimesResult LoadFromBIN(std::fstream& f, uint64_t* arr, size_t len);
