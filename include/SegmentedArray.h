@@ -100,7 +100,7 @@ public:
 	inline void setTrue(uint64_t index)
 	{
 		assert(index >= m_begin);
-		assert(index < m_end);
+		assert(index < m_end);   // m_end is NOT included into range
 		m_data->setTrue(index - m_begin);
 	}
 
