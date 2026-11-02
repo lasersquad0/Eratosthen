@@ -1,6 +1,13 @@
 #pragma once
 
 #include <string>
+#include "LogEngine2/LogEngine.h"
+
+
+#define GET_LOGGER auto& logger = LogEngine::GetLogger(ERA::LOGGER_NAME)
+
+//TODO may be we dont need CURR_THREAD_ID
+#define CURR_THREAD_ID LogEngine::GetThreadID()
 
 // field width for printing various results to console
 const uint32_t F_WIDTH = 27;
@@ -9,7 +16,9 @@ namespace ERA
 {
 	inline std::string APP_EXE_NAME = "SOME APP.exe"; // initialized from argv[0] in main()
 	inline std::string APP_NAME = "SOME APP";         // initialized from argv[0] in main()
-
+	inline std::string LOGGER_NAME = "SOME NAME";     // initialized from argv[0] in main()
+	inline std::string LOGFILE_NAME = "SOME F NAME";  // initialized from argv[0] in main()
+	 
 	struct MyGroupSeparator : std::numpunct<char>
 	{
 		char do_thousands_sep() const override { return '\''; }    // thousands separator
