@@ -7,17 +7,27 @@
 #include "ProgressPrinter.h"
 
 
-/*class invalid_cmd_option : public std::invalid_argument
+struct RangePair
 {
-public:
-	invalid_cmd_option(std::string str): invalid_argument(str)
-	{
-	}
-};*/
+	uint64_t Start;
+	uint64_t End;
+	uint64_t RealStart;
+	uint64_t RealEnd;
+};
 
 class EratosthenesSieve;
+//typedef Range RangePair;
+typedef std::mutex SyncType;
+typedef std::pair<SyncType*, RangePair> RangeItem;
+
+typedef void (*StrikeoutComposedFun)(uint64_t NPrime, uint64_t currPrime, RangePair range, EratosthenesSieve* es);
+
 typedef std::function<void(uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es)> StrikeoutComposedPred;
+
 void FindPrimesThread(EratosthenesSieve* es, StrikeoutComposedPred predStrikeoutComposed); // forward declaration
+void FindPrimesThread2(EratosthenesSieve* es, StrikeoutComposedFun funStrikeoutComposed, RangePair range); // forward declaration
+void funStrikeoutComposedOptimum(uint64_t NPrime, uint64_t currPrime, RangePair range, EratosthenesSieve* es); // forward declaration
+
 
 enum class CALC_MODE { none, simple, optimized, n6n1, n30x };
 
@@ -52,25 +62,21 @@ private:
 	CALC_MODE m_mode;
 	uint64_t m_realStart;  
 	uint64_t m_realLength; // range length where we are looking for prime numbers
-	uint64_t m_realEnd; 
+	uint64_t m_realEnd; // m_realEnd is NOT included into range while m_realStart is.
 	std::atomic_uint m_nextPrimeIndex;
 
-	SegmentedArray* m_bitArray;
-	
-	std::atomic_uint m_threadIDs = 0;
+	//std::atomic_uint m_threadIDs = 0;
 	uint32_t m_readPrimes;
 	uint64_t* m_prldPrimes;
-	std::mutex m_mutex; // to sync printing to std::cout from different threads
+	//std::mutex m_mutex; // to sync printing to std::cout from different threads
 
-	typedef std::pair<uint64_t, uint64_t> RangePair;
-	typedef std::mutex SyncType;
-
-	typedef std::pair<SyncType*, RangePair> RangeItem;
 	std::vector<RangeItem> m_ranges;
 
 private:
 	friend void FindPrimesThread(EratosthenesSieve* es, StrikeoutComposedPred predStrikeoutComposed);
+	friend void FindPrimesThread2(EratosthenesSieve* es, StrikeoutComposedFun funStrikeoutComposed, RangePair range);
 	bool predBIN6n1(std::ostream& stream, uint64_t index);
+	//void StrikeoutComposed(uint64_t NPrime, uint64_t currPrime, EratosthenesSieve* es);
 
 	void calculateSimple();
 	void calculateOptimum();
@@ -81,15 +87,16 @@ private:
 	typedef std::function<bool(std::ostream& stream, uint64_t index)> SavePrimeToStreamPred;
 	typedef std::function<uint64_t(std::ostream& stream)> StartPrimePred;
 
-	uint64_t saveAsTXT(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred);
-	uint64_t saveAsBIN(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred);
-	uint64_t saveAsBINDiffVarSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
+	uint64_t saveAsTXT(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred) const;
+	uint64_t saveAsBIN(std::string& outputFilename, StartPrimePred startPred, SavePrimeToStreamPred pred) const;
 
+	//uint64_t saveAsBINDiffVarSimpleMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename);
 	//uint64_t saveAsTXTOptimumMode(SegmentedArray* sarr, std::string& outputFilename, StartPrimePred startPred, PrimeDiffFromIndexPred pred);
 	//uint64_t saveAsTXTDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	//uint64_t saveAsBINOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	//uint64_t saveAsBINDiffOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
-	uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	//uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
+	
 	//uint32_t loadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
 	uint32_t loadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
 	uint32_t loadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
@@ -98,12 +105,15 @@ private:
 	std::string getOutputFilename();
 	uint64_t parseOption(std::string s, char& symFactor, uint64_t& factor);
 	void checkStartParam(std::string start);
-	void defineRanges(uint64_t start, uint64_t length);
+	void defineRanges(uint64_t start, uint64_t length, uint64_t k = 10);
 	RangeItem* getRange(uint64_t v);
 	uint64_t nextPrime();
 	void FindPrimesInThreads(uint32_t numThreads, StrikeoutComposedPred predIndexFromPrime);
+	void FindPrimesInThreads2(uint32_t numThreads, StrikeoutComposedFun funStrikeoutComposed);
 
 public:
+	SegmentedArray* m_bitArray;
+
 	static const uint64_t DEFAULT_START = 20ULL * FACTOR_T; // default start value to calculating primes when is not specified in command line
 	static const uint64_t DEFAULT_LENGTH = 10'000'000'000ULL; // length of range to calculate primes if not specified in command line
 
