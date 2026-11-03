@@ -1,23 +1,25 @@
 # Eratosthen - primes generating and verifying tool
 
-Runs several Eratosthen algorithms for generating prime numbers for specified range.
-Save generates primes into files of 5 formats (either text or binary).
-
-Checks numbers for primality.
-
-Convert files with primes from one format to another.
+- Runs several Eratosthen algorithms for generating prime numbers for specified range.
+- Saves generates primes into files of 5 formats (either text or binary).
+- Checks numbers for primality.
+- Converts files with primes from one format to another.
 
 ## Generating primes
 
 Use command `-g` for prime generating. You also need to specify algorithm, output file format and range where you want to get primes. 
 
-`Eratorthen.exe` supports four primes generating algorithms: simple, optimum, 6n1 and 30nx.
+`Eratorthen.exe` supports four primes generating algorithms: `simple`, `optimum`, `6n1` and `30nx`.
 Any Eratosthenes algorithm requires much memory for its execution.
-**Simple** algorithm is a straightforward and simple implementation of Eratosthen algorithm.
-**Optimum** algorithm requires two times less memory than simple one because it does not store even numbers.
-**6n1** algorithm uses fact that any prime number may have reminders either 1 or 5 when dividing by 6.
+
+`Simple` algorithm is a straightforward and simple implementation of Eratosthen algorithm.
+
+`Optimum` algorithm requires two times less memory than simple one because it does not store even numbers.
+
+`6n1` algorithm uses fact that any prime number may have reminders either 1 or 5 when dividing by 6.
 It does not store numbers that have other reminders. This way it saves memory.
-**30nx** this is an extension of 6n1 algorithm using divider 30. It uses even less memory than 6n1 and slightly faster then 6n1.
+
+`30nx` this is an extension of 6n1 algorithm using divider 30. It uses even less memory than 6n1 and slightly faster then 6n1.
 
 ### Output file format
 
@@ -37,7 +39,7 @@ In addition to above, distance between two primes numbers is always even. So we 
 That idea allows us to create even more 'compressed' format of storing such numbers. `bindiffvar` format uses 'variable length' coding to store difference between two consequitive primes numbers.
 it makes file with primes numbers 10 times smaller size than txt format.
 
-To specify file format use predefined names: `txt`, `txtdiff`, `bindiff`, `bindiffvar` as the second argument (<format>) of `-g` option.
+To specify file format use predefined names: `txt`, `txtdiff`, `bindiff`, `bindiffvar` as the second argument (`<format>`) of `-g` option.
 
 ### Start and Length parameters
 
@@ -60,14 +62,14 @@ Suffix B can be omitted, in both cases value will threated as value in bytes.
 Examples of commands for generating primnes:
 
 ```
-Erastofen.exe -g simple txt 0B 10g           - 'simple' algorithm, txt file format, seeks primes in a range 0...10G 
-Erastofen.exe -g optimum bin 900G 100G       - 'optimum' algorithm, bin file format, seeks primes from 900G to 1000G
-Erastofen.exe -g 6n1 txtdif 100T 10G         - '6n1' algorithm, txtdiff file format, seeks primes from 100 terabytes =100'000'000'000'000 to 100T+10G =100'010'000'000'000
-Erastofen.exe -g 6n1 bindiff 5T 50g          - '6n1' algorithm, bindiff file format, START=5T and LENGTH=50G (5T...5T+50G)
-Erastofen.exe -g optimum bindiffvar 20P 1G   - 'optimum' algorithm, bindiffvar file format, START=20T and LENGTH=1G
-Erastofen.exe -g 30nx bin 0P 1G              - if you would like to generate primes starting from zero you can use any modificator for START argument, or without modificator.
-Erastofen.exe -t 5 -g 30nx bindiffvar 20P 1G - the same as above but primes generation will be performed in 5 threads + 1 main and controling thread.
-Erastofen.exe -t 5 -p "primes - 3G.diffvar.bin" -g 30nx bindiffvar 20P 1G   - the same as above but primes will be preloaded from specified file instead of default one.
+Eratosthen.exe -g simple txt 0B 10g           - 'simple' algorithm, txt file format, seeks primes in a range 0...10G 
+Eratosthen.exe -g optimum bin 900G 100G       - 'optimum' algorithm, bin file format, seeks primes from 900G to 1000G
+Eratosthen.exe -g 6n1 txtdif 100T 10G         - '6n1' algorithm, txtdiff file format, seeks primes from 100 terabytes =100'000'000'000'000 to 100T+10G =100'010'000'000'000
+Eratosthen.exe -g 6n1 bindiff 5T 50g          - '6n1' algorithm, bindiff file format, START=5T and LENGTH=50G (5T...5T+50G)
+Eratosthen.exe -g optimum bindiffvar 20P 1G   - 'optimum' algorithm, bindiffvar file format, START=20T and LENGTH=1G
+Eratosthen.exe -g 30nx bin 0P 1G              - if you would like to generate primes starting from zero you can use any modificator for START argument, or without modificator.
+Eratosthen.exe -t 5 -g 30nx bindiffvar 20P 1G - the same as above but primes generation will be performed in 5 threads + 1 main and controling thread.
+Eratosthen.exe -t 5 -p "primes - 3G.diffvar.bin" -g 30nx bindiffvar 20P 1G   - the same as above but primes will be preloaded from specified file instead of default one.
 ```
 
 ### Options `threads` and `preload`
@@ -92,17 +94,18 @@ Number to verify can be specified in command line as arguments of `-v` command o
 In case of loading numbers from file, file name should be specified as first argument of `-v` command preceeded with '@'. '@' is not a part of file name.
 Only one such file can be specified this way.
 
-If you speicifed a file to read numbers from, you can specify two additional options: `-i` and `-l`
+If you speicifed a file to read numbers from, you can specify two additional options: `-i` and `-l`.
+
 Option `-i` tells how many numbers need to be skipped (ignored) before starting verification.
+
 Option `-l` tells how many numbers to verify. Skipped numbers are not counted to numbers to verify.
 
 Examples:
 
 ```
-Erastofen.exe -v 101 1234007 55739 485737593  - verify 4 numbers provided in command line 
-Erastofen.exe -v @mynumbers.txt               - verify all numbers read from file
-Erastofen.exe -v @nums.txt -i 1000 -l 100     - will skip first 1000 numbers, then verify 100 numbers from a file nums.txt
-
+Eratosthen.exe -v 101 1234007 55739 485737593  - verify 4 numbers provided in command line 
+Eratosthen.exe -v @mynumbers.txt               - verify all numbers read from file
+Eratosthen.exe -v @nums.txt -i 1000 -l 100     - will skip first 1000 numbers, then verify 100 numbers from a file nums.txt
 ```
 
 ## Convert files with primes
@@ -115,9 +118,9 @@ Output file name will be build from input file name by adding extension of 'to' 
 Examples:
 
 ```
-Erastofen.exe -c txt-bin mynums.txt               - convert mynums.txt from txt format to bin. Resulting file will have name mynums.txt.bin 
-Erastofen.exe -c bindiff-txtdiff mynums.diff.bin  - convert mynums.diff.bin into txtbon format. Resulting file will have name mynums.diff.bin.diff.txt
-Erastofen.exe -c txt-bindiffvar nums.txt          - convert nums.txt into bindiffvar format. Resulting file will have name nums.txt.diffvar.bin
+Eratosthen.exe -c txt-bin mynums.txt               - convert mynums.txt from txt format to bin. Resulting file will have name mynums.txt.bin 
+Eratosthen.exe -c bindiff-txtdiff mynums.diff.bin  - convert mynums.diff.bin into txtbon format. Resulting file will have name mynums.diff.bin.diff.txt
+Eratosthen.exe -c txt-bindiffvar nums.txt          - convert nums.txt into bindiffvar format. Resulting file will have name nums.txt.diffvar.bin
 
 ```
 
