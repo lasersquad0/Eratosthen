@@ -7,8 +7,12 @@
 
 ## Generating primes
 
-Use command `-g` for prime generating. You also need to specify algorithm, output file format and range where you want to get primes. 
+Use command `-g` for prime generating. You also need to specify algorithm, output file format and range where you want to get primes.
 
+Format:
+```
+Eratosthen.exe -g <alg> <format> <start> <len> [-otheropt <arg>]
+```
 `Eratorthen.exe` supports four primes generating algorithms: `simple`, `optimum`, `6n1` and `30nx`.
 Any Eratosthenes algorithm requires much memory for its execution.
 
@@ -88,7 +92,12 @@ If you would like to use another file with pre-generated prime numbers you can u
 
 ## Check numbers for primality
 
-`Eratosthen.exe` can verify number of primality.
+`Eratosthen.exe` can verify numbers of primality.
+
+Format:
+```
+Eratosthen.exe -v (@fname)|(<p1>...<pN>) [-otheropt <arg>] 
+```
 It is done using simple deterministic algoritm by dividing number to all numbers from 2 till sqrt(number).
 Number to verify can be specified in command line as arguments of `-v` command or loaded from file. All 5 file formats mentioned above are supported.
 In case of loading numbers from file, file name should be specified as first argument of `-v` command preceeded with '@'. '@' is not a part of file name.
@@ -111,6 +120,11 @@ Eratosthen.exe -v @nums.txt -i 1000 -l 100     - will skip first 1000 numbers, t
 ## Convert files with primes
 
 `Eratosthen.exe` has a function to convert files from one format to another (option `-c`).
+
+Format:
+```
+Eratosthen.exe -c <from-to> <filename>
+```
 All 5 formats are supported with any conversions between them.
 `-c` requires two arguments 'from-to' and input file name.
 Output file name will be build from input file name by adding extension of 'to' format accordingly.
@@ -124,11 +138,11 @@ Eratosthen.exe -c txt-bindiffvar nums.txt          - convert nums.txt into bindi
 
 ```
 
-### Full list of command line arguments
+## Full list of command line arguments
 
 ```
 Usage:
-Eratosthen.exe \[-g <alg> <format> <start> <len>] \[-v (@fname)|(<p1>...<pN>)] \[-c <from-to> <fname>] \[opt] <arg>" 
+Eratosthen.exe \[-g <alg> <format> <start> <len>] \[-v (@fname)|(<p1>...<pN>)] \[-c <from-to> <fname>] \[opt] <arg>
 
 Commands:
    -g, --generate        Generates primes using one of four available Eratosthenes sieve algorithms: simple, optimum, 6n1, 30nx.
