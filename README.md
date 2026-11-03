@@ -3,11 +3,12 @@
 This is a tool that runs several Eratosthen algorithms for generating prime numbers in specified range, checks numbers for primality and converts files with primes from one format to another.
 
 ## Generating primes
+
 ### Command line arguments
 
 ```
 Usage:
-Eratosthen.exe [-g <alg> <format> <start> <len>] [-v (@fname)|(<p1>...<pN>)] [-c <from-to> <fname>] [opt] <arg>" 
+Eratosthen.exe \[-g <alg> <format> <start> <len>] \[-v (@fname)|(<p1>...<pN>)] \[-c <from-to> <fname>] \[opt] <arg>" 
 
 Commands:
    -g, --generate        Generates primes using one of four available Eratosthenes sieve algorithms: simple, optimum, 6n1, 30nx.
@@ -41,13 +42,14 @@ Options:
    If you need help on cmd parameters type: Eratosthen.exe -h
 
 ```
+
 You can specify only one command (either `-g`, `-v` or `-c`) with required arguments and any number of options related to the command.
 
 ### Prime generation
 
 There are four primes generating algorithms: simple, optimum, 6n1 and 30nx.
 Eratosthen algorithm itself requires much memory for execution.
-Simple mode is a straightforward and simple implementation of Eratosthen algorithm. 
+Simple mode is a straightforward and simple implementation of Eratosthen algorithm.
 Optimum mode requires about two times less memory than simple mode because it does not store even numbers.
 6n1 mode uses fact that any prime number may have only reminders either 1 or 5 when dividing by 6.
 It does not store numbers that have other reminders. This way it saves memory.
@@ -123,12 +125,13 @@ If you would like to use another file with pre-generated prime numbers you can u
 Application can verify number of primality.
 It is done using simple deterministic algoritm by dividing number to all numbers from 2 till sqrt(number).
 Number to verify can be specified in command line as arguments of `-v` command or loaded from file. All 5 file formats mentioned above are supported.
-In case of loading numbers from file, file name should be specified as first argument of `-v` command preceeded with '@'. '@' is not a part of file name. 
+In case of loading numbers from file, file name should be specified as first argument of `-v` command preceeded with '@'. '@' is not a part of file name.
 Only one such file can be specified this way.
 
-If you speicifed a file to read numbers from, you can specify two additional options: `-i` and `-l` 
+If you speicifed a file to read numbers from, you can specify two additional options: `-i` and `-l`
 Option `-i` tells how many numbers need to be skipped (ignored) before starting verification.
 Option `-l` tells how many numbers to verify. Skipped numbers are not counted to numbers to verify.
+
 
 
 Examples:
