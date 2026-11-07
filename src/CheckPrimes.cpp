@@ -132,9 +132,9 @@ void CheckPrimes::checkPrimesInThreads(uint8_t numThreads)
 void CheckPrimes::Start(const string& fileName, uint8_t numThreads)
 {
     if(numThreads < 1)
-        throw invalid_argument("Error: number of threads cannot be zero.\n");
-    if (numThreads > 20)
-        throw invalid_argument("Error: number of threads cannot be more than 24.\n");
+        throw invalid_argument("Error: number of threads cannot be zero.");
+    if (numThreads > MAX_ALLOWED_THREADS)
+        throw invalid_argument(format("Error: number of threads cannot be more than {}.", MAX_ALLOWED_THREADS));
 
     cout << format("{:<{}}: {}", "Requested operation", F_WIDTH, "Check numbers from file") << endl;
     cout << format("{:<{}}: {}", "Number of threads", F_WIDTH, numThreads) << endl;
