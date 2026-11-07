@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <cassert>
 
-class BigInt;
+//class BigInt;
 
-#define CALLBACK_OK    0
-#define CALLBACK_ABORT 1
+//#define CALLBACK_OK    0
+//#define CALLBACK_ABORT 1
 
-typedef int(__stdcall* TPrimeNumberCallback)(const BigInt& curr, const BigInt& max);
+//typedef int(__stdcall* TPrimeNumberCallback)(const BigInt& curr, const BigInt& max);
 
 class TBigIntException :public std::exception
 {
@@ -46,11 +46,17 @@ public:
     static const BigInt TEN;
 
     //Constructors:
-    BigInt(unsigned long long nr = 0ull);
+    BigInt(unsigned long long nr);
+    BigInt(signed long long nr);
+    BigInt(unsigned int nr);
+    BigInt(int nr = 0);
+
     BigInt(const std::string& s);
     BigInt(const char* s);
     BigInt(const BigInt& a);
     
+    void FromUInt(unsigned long long nr);
+
     const std::string& GetDigits() const { return digits; };
     //void SetDigits(std::string& dig) { assert(dig.size() > 0); digits = dig; }; // sets digits in internal format
 
@@ -149,8 +155,8 @@ public:
         return s.str();*/
     }
 
-    BigInt isPrimeNumber30(TPrimeNumberCallback callback, uint64_t threshold = 25'000);
-    BigInt isPrimeNumber(TPrimeNumberCallback callback, uint64_t threshold = 25'000);
+    //BigInt isPrimeNumber30(TPrimeNumberCallback callback, uint64_t threshold = 25'000);
+    //BigInt isPrimeNumber(TPrimeNumberCallback callback, uint64_t threshold = 25'000);
 
     //Square Root Function
     friend BigInt sqrt(BigInt& a);
