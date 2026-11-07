@@ -8,6 +8,7 @@
 #define DEFAULT_V_THREADS 4     // default number of threads for primes verify (option -v)
 #define DEFAULT_LIMIT_PRIMES 0  // 0 means 'unlimited'
 #define DEFAULT_OFFSET_PRIMES 0
+#define MAX_ALLOWED_THREADS 24
 
 class Parameters
 {

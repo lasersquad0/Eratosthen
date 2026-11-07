@@ -110,14 +110,15 @@ int main(int argc, char* argv[])
             try
             {
                 uint8_t threads = (uint8_t)stoul(cmd.GetOptionValue(OPT_T));
-                if ((threads == 0) || (threads > 25))
-                    cout << "Number of threads (" << cmd.GetOptionValue(OPT_T) << ") is out of bounds (1...25). Using default value " << Parameters::THREADS << "." << endl;
+                if ((threads == 0) || (threads > MAX_ALLOWED_THREADS))
+                    cout << format("Number of threads ({}) is out of bounds (1...{}). Using default value {}.", 
+                                 cmd.GetOptionValue(OPT_T), MAX_ALLOWED_THREADS, Parameters::THREADS) << endl << endl;
                 else
                     Parameters::THREADS = threads;
             }
             catch (...)
             {
-                cout << "Incorrect number of threads specified '" << cmd.GetOptionValue(OPT_T) << "'. Using default value " << Parameters::THREADS << "." << endl;
+                cout << format("Incorrect number of threads specified ({}). Using default value {}.", cmd.GetOptionValue(OPT_T), Parameters::THREADS) << endl << endl;
             }
         }
 
