@@ -20,7 +20,7 @@ set OPT=-o %TESTSFOLDER% -p "PRE-CALC PRIMES.diffvar.bin"
 
 mkdir %TESTSFOLDER%
 
-copy /Y ..\x64\Release\Eratosthen.exe .
+copy /Y ..\prj\Eratosthen\x64\Release\Eratosthen.exe .
 
 set FORMAT[0]=txt
 set FORMAT[1]=txtdiff
