@@ -1,13 +1,161 @@
 
-
 #include <iostream>
 #include <cassert>
 #include <chrono>
-//#include <sstream>
 #include <algorithm>
-#include <windows.h>
+
+// this is to remove defines min, max in windows headers because they conflict with std::min std::max 
+#define NOMINMAX
+#include <windows.h> // for GetProcessMemoryInfo()
+
 #include <psapi.h>
-#include "Utils.h"
+#include "PrimesFIO.h" // for var_len_encode and var_len_decode functions
+#include "Utils.h" 
+
+
+/////////////////////////////////////////////////////////
+// uint64_t IsPrimeNumber30 functions
+/////////////////////////////////////////////////////////
+
+// return 0 means 'no dividers' - number is prime
+// any other value is a divider of prime
+uint64_t IsPrimeNumber30(uint64_t number, const uint64_t* primes, const uint64_t primesSize)
+{
+    uint64_t stop = (uint64_t)sqrt(number) + 1;
+    
+    uint64_t prime;
+    size_t i = 0;
+    while (i < primesSize)
+    {
+        prime = primes[i];
+        if (prime >= stop) return 0; // number is prime
+        if ((number % prime) == 0) return prime; // number is NOT prime (compound)
+        ++i;
+    }
+
+    // if we are here it means that primes array is too small to determine whether number is prime.
+    // continue checking with another alg
+    // use 30nx alg which starts from last checked prime
+    return IsPrimeNumber30(number, primes[primesSize - 1], stop);
+}
+
+uint64_t IsPrimeNumber30(uint64_t number)
+{
+    return IsPrimeNumber30(number, 0ull, (uint64_t)sqrt(number) + 1);
+}
+
+uint64_t IsPrimeNumber30(uint64_t number, uint64_t start, uint64_t stop)
+{   
+    // if number < 30 we don't care about start and stop 
+    if (number < 30) return KNOWN_DIV[number];
+    if (stop > number) stop = number;
+    if (start > stop) start = stop;
+    //assert(start <= stop);
+    //assert(stop < number);
+
+    if (start < 30)
+    {
+        if ((number & 1) == 0)  return 2; // right, here should be & instead of %
+        if ((number % 3) == 0)  return 3;
+        if ((number % 5) == 0)  return 5;
+        if ((number % 7) == 0)  return 7;
+        if ((number % 11) == 0) return 11;
+        if ((number % 13) == 0) return 13;
+        if ((number % 17) == 0) return 17;
+        if ((number % 19) == 0) return 19;
+        if ((number % 23) == 0) return 23;
+        if ((number % 29) == 0) return 29;
+    }
+
+    uint64_t multiple30 = (start / 30) * 30;
+    if (multiple30 < 30) multiple30 = 30;
+    if (stop >= 30) stop -= 30; // when stop=30 we actually check 31,37...53,59, need deduct 30
+
+    for (uint64_t i = multiple30; i <= stop; i += 30)
+    {
+        if (number % (i + 1) == 0) return i + 1;
+        if (number % (i + 7) == 0) return i + 7;
+        if (number % (i + 11) == 0) return i + 11;
+        if (number % (i + 13) == 0) return i + 13;
+        if (number % (i + 17) == 0) return i + 17;
+        if (number % (i + 19) == 0) return i + 19;
+        if (number % (i + 23) == 0) return i + 23;
+        if (number % (i + 29) == 0) return i + 29;
+    }
+
+    return 0;
+}
+
+//Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
+uint32_t LoadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime)
+{
+    //TODO why don't use similar functions from PrimesFIO?
+
+
+    std::fstream f;
+    f.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    f.open(filename, std::ios::in | std::ios::binary);
+    f.exceptions(std::ifstream::badbit);
+
+    uint64_t diff;
+    uint64_t lastPrime = 0;
+    uint8_t buf[9];
+    size_t maxSize;
+
+    uint32_t cnt = 0;
+    while (cnt < len)
+    {
+        maxSize = 0;
+
+        while (true)
+        {
+            f.read((char*)(buf + maxSize), 1);
+            if (f.eof()) break;
+            if ((buf[maxSize++] & 0x80) == 0) break;
+        }
+
+        if (f.eof()) break;
+
+        [[maybe_unused]] size_t res = var_len_decode(buf, maxSize, &diff);
+
+        assert(res == maxSize);
+
+        if (lastPrime > 2) diff *= 2; // multiply by 2 все: кроме первого числа(lastPrime==0), и когда lastPrime==2
+
+        primes[cnt] = diff + lastPrime;
+        lastPrime = primes[cnt++];
+
+        if (lastPrime > stopPrime) break;
+    }
+
+    return cnt;
+}
+
+//Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
+uint32_t LoadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime)
+{
+    std::fstream f;
+    f.exceptions(/*ifstream::failbit |*/ std::ifstream::badbit);
+    f.open(filename, std::ios::in);
+
+    std::string line;
+
+    uint32_t cnt = 0;
+    while (cnt < len)
+    {
+        getline(f, line, ',');
+        if (f.eof()) break;
+
+        primes[cnt] = atoll(line.c_str());
+
+        if (primes[cnt] > stopPrime) break;
+        cnt++;
+    }
+
+    f.close();
+
+    return cnt;
+}
 
 
 #pragma comment(lib, "psapi.lib")
@@ -38,54 +186,6 @@ void PrintMemoryUsage()
         std::cout << std::endl << "Error getting Memory Usage info" << std::endl;
 
 }
-
-/*void Trim(std::string& str) // str passed by value here intentionally
-{
-    // remove any leading and traling spaces tabs.
-    size_t strBegin = str.find_first_not_of(" \t");
-    if (strBegin == std::string::npos) return;
-
-    size_t strEnd = str.find_last_not_of(" \t");
-    assert(strEnd != std::string::npos);
-
-    str.erase(strEnd + 1);
-    str.erase(0, strBegin);
-}
-
-void TrimAndUpper(std::string& str)
-{
-    Trim(str);
-
-    // to uppercase
-    transform(str.begin(), str.end(), str.begin(), ::mytoupper);
-}
-
-std::string StripFileExt(const std::string& FileName)
-{
-    size_t i = FileName.length();
-    if (i == 0) return "";
-
-    bool f = false;
-    do
-    {
-        i--;
-        if (FileName[i] == '.')
-        {
-            f = true; // we found a dot
-            break;
-        }
-
-        if (FileName[i] == '\\' || FileName[i] == '/') // stop is folder delimiter found
-            break;
-
-    } while (i > 0);
-
-    if (f)
-        return FileName.substr(0, i);
-    else
-        return FileName;
-}
-*/
 
 void PrintTime(const std::string& msg)
 {
