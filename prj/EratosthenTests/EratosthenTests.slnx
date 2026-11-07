@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="EratosthenTests.vcxproj" Id="f14e1efd-9e60-4d34-b54d-47aa6d9659b4" />
+</Solution>
