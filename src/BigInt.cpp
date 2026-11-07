@@ -39,10 +39,10 @@ uint64_t toUInt64(const BigInt& v)
 
 // constants for quick compare with common values
 const BigInt BigInt::ZERO(0ull);
-const BigInt BigInt::ONE(1);
-const BigInt BigInt::TWO(2);
-const BigInt BigInt::THREE(3);
-const BigInt BigInt::TEN(10);
+const BigInt BigInt::ONE(1u);
+const BigInt BigInt::TWO(2u);
+const BigInt BigInt::THREE(3u);
+const BigInt BigInt::TEN(10u);
 
 BigInt::BigInt(const std::string& s)
 {
@@ -57,14 +57,36 @@ BigInt::BigInt(const std::string& s)
     }
 }
 
-BigInt::BigInt(unsigned long long nr)
+ BigInt::BigInt(unsigned long long nr)
 {
-    do
+    FromUInt(nr);
+ /*   do
     {
         digits.push_back(nr % 10);
         nr /= 10;
-    } while (nr);
+    } while (nr); */
 }
+
+ BigInt::BigInt(signed long long nr)
+ {
+     FromUInt((unsigned long long)nr);
+ }
+
+ BigInt::BigInt(int nr)
+ {
+     FromUInt((unsigned long long)nr);
+ }
+
+ BigInt::BigInt(unsigned int nr)
+{
+    FromUInt(nr);
+/*    do
+    {
+        digits.push_back(nr % 10);
+        nr /= 10;
+    } while (nr);*/
+}
+
 
 BigInt::BigInt(const char* s)
 {
@@ -83,6 +105,16 @@ BigInt::BigInt(const BigInt& a)
 {
     digits = a.digits;
 }
+
+void BigInt::FromUInt(unsigned long long nr)
+{
+    do
+    {
+        digits.push_back(nr % 10);
+        nr /= 10;
+    } while (nr);
+}
+
 
 int BigInt::operator[](const int index) const
 {
@@ -281,7 +313,7 @@ BigInt& operator/=(BigInt& a, const BigInt& b)
     }
     if (a == b)
     {
-        a = BigInt(1);
+        a = BigInt(1u);
         return a;
     }
     int i, lgcat = 0, cc;
@@ -387,6 +419,7 @@ BigInt operator^(BigInt& a, BigInt& b)
 * @param threshold Defines number of iterations that will be done before next callback call
 * @return Value 0 means 'no dividers' - number is prime, any other value is a found divider of prime
 */
+/*
 BigInt BigInt::isPrimeNumber(TPrimeNumberCallback callback, uint64_t threshold)
 {
     // assume that current number is greater than 3.
@@ -414,7 +447,7 @@ BigInt BigInt::isPrimeNumber(TPrimeNumberCallback callback, uint64_t threshold)
 
     return 0ull;
 }
-
+*/
 /**
 * @brief checks youself for primality using 30nx method
 * @details it is possible to define a callback function that will be called during primality verifying process 
@@ -424,6 +457,7 @@ BigInt BigInt::isPrimeNumber(TPrimeNumberCallback callback, uint64_t threshold)
 * @param threshold Defines number of iterations that will be done before next callback call 
 * @return Value 0 means 'no dividers' - number is prime, any other value is a found divider of prime
 */
+/*
 BigInt BigInt::isPrimeNumber30(TPrimeNumberCallback callback, uint64_t threshold)
 {
     // assume that current number is greater than 29.
@@ -466,7 +500,7 @@ BigInt BigInt::isPrimeNumber30(TPrimeNumberCallback callback, uint64_t threshold
 
     return BigInt::ZERO;
 }
-
+*/
 void divide_by_2(BigInt& a)
 {
     int add = 0;
