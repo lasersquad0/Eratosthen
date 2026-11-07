@@ -51,7 +51,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 	//MappedFileStream bfs(fileNameFrom); // to use in SOME file format conversion calls
 	BuferedFileStream bfs(fileNameFrom);
 	
-	string fileTo = Parameters::OUTPUT_FOLDER + "\\" + ExtractFileName(fileNameFrom) + m_Exts[to];
+	string fileTo;
+
+	if (Parameters::OUTPUT_FOLDER.size() == 0)
+		fileTo = ExtractFileName(fileNameFrom) + m_Exts[to];
+	else
+		fileTo = Parameters::OUTPUT_FOLDER + "\\" + ExtractFileName(fileNameFrom) + m_Exts[to];
 
 	fstream fout;
 	//fout.exceptions(/*ifstream::failbit |*/ ifstream::badbit);
@@ -70,11 +75,6 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 	uint64_t totalBytesRead = 0, array_len, maxDiff = 0;
 	LoadPrimesResult lpResult;
 
-	// NOTE - not all conversion pairs are supported in the big "switch" below
-	// Unsupported pairs: txtdiff-bindiffvar,
-	// bindiff-bindiffvar, 
-	// bindiffvar-txtdiff, bindiffvar-bindiff
-	
 	if (from == PFF::txt && to == PFF::txtdiff) //***** 1 *****  txt-txtdiff
 	{
 		uint64_t lastPrime = 0;
@@ -90,9 +90,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXT(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXTDiff(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -116,9 +119,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXT(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBIN(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -142,9 +148,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXT(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiff(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -171,9 +180,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBIN(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiff(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -198,9 +210,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBIN(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXT(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -225,9 +240,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBIN(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXTDiff(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -252,9 +270,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXTDiff(fin, primes, array_len, lastPrime);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXT(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -277,9 +298,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXTDiff(fin, primes, array_len, lastPrime);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBIN(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -305,10 +329,11 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXTDiff(fin, primes, array_len, lastPrime1);
 			assert(lpResult.BytesRead > 0);
-			assert(lpResult.BytesRead < ARRAY_LEN*sizeof(uint64_t));
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
+			assert(lpResult.BytesRead <= ARRAY_LEN*sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiff(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if(!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -333,9 +358,11 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXTDiff(fin, primes, array_len, lastPrime1);
 			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiffVar(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -361,9 +388,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiff(fin, primes, array_len, lastPrime);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBIN(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -387,9 +417,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiff(fin, primes, array_len, lastPrime);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXT(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -415,9 +448,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiff(fin, primes, array_len, lastPrime1);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXTDiff(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -441,9 +477,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiff(fin, primes, array_len, lastPrime1);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiffVar(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -470,9 +509,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBIN(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiffVar(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -498,9 +540,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromTXT(fin, primes, array_len);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiffVar(primes, lpResult.PrimesLoaded, lastPrime, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -526,9 +571,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiffVar(bfs, primes, array_len, lastPrime);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBIN(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -552,10 +600,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiffVar(bfs, primes, array_len, lastPrime);
-			assert(lpResult.BytesRead < ARRAY_LEN);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXT(primes, lpResult.PrimesLoaded, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -577,10 +627,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiffVar(bfs, primes, array_len, lastPrime1);
-			assert(lpResult.BytesRead < ARRAY_LEN);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsTXTDiff(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -604,10 +656,12 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress(totalBytesRead, fileSize);
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			lpResult = LoadFromBINDiffVar(bfs, primes, array_len, lastPrime1);
-			assert(lpResult.BytesRead < ARRAY_LEN);
+			assert(lpResult.BytesRead > 0);
+			assert(lpResult.BytesRead <= ARRAY_LEN * sizeof(uint64_t)); // worst case, in most cases BytesRead is less than ARRAY_LEN*sizeof(uint64_t) because of diff, diffvar, etc.
+			assert(lpResult.PrimesLoaded <= ARRAY_LEN);
 			totalBytesRead += lpResult.BytesRead;
-			PrintProgress(totalBytesRead, fileSize);
 			SaveAsBINDiff(primes, lpResult.PrimesLoaded, lastPrime2, maxDiff, fout);
+			PrintProgress(totalBytesRead, fileSize);
 			assert(noLimit || limitPrimes >= lpResult.PrimesLoaded);
 			if (!noLimit) limitPrimes -= lpResult.PrimesLoaded;
 			totalSaved += lpResult.PrimesLoaded;
@@ -631,8 +685,8 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress();
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			loaded = LoadFromBINJava(primes, array_len, fin);
-			PrintProgress();
 			SaveAsBIN(primes, loaded, fout);
+			PrintProgress();
 			assert(noLimit || limitPrimes >= loaded);
 			if (!noLimit) limitPrimes -= loaded;
 			totalSaved += loaded;
@@ -657,8 +711,8 @@ void FileConverter::Convert(string fromTo, string fileNameFrom, uint64_t limitPr
 			PrintProgress();
 			array_len = noLimit ? ARRAY_LEN : min(ARRAY_LEN, limitPrimes);
 			loaded = LoadFromBINDiffVarOLD(primes, array_len, lastPrime1, fin);
-			PrintProgress();
 			SaveAsBINDiffVar(primes, loaded, lastPrime2, maxDiff, fout);
+			PrintProgress();
 			assert(noLimit || limitPrimes >= loaded);
 			if (!noLimit) limitPrimes -= loaded;
 			totalSaved += loaded;
