@@ -52,194 +52,196 @@ int main(int argc, char* argv[])
     _CrtMemState s1, s2, s3;
     _CrtMemCheckpoint(&s1); // Take a snapshot at the start of main()
 
+    GET_LOGGER;
+
     try
     {
 
-    ERA::APP_EXE_NAME = ExtractFileName(argv[0]); // this statement needs to be before first possible call of PrintUsage().
-    ERA::APP_NAME = StripFileExt(ERA::APP_EXE_NAME);
-    ERA::LOGGER_NAME = ERA::APP_NAME;
-    ERA::LOGFILE_NAME = ERA::APP_NAME + "Log.log";
+        ERA::APP_EXE_NAME = ExtractFileName(argv[0]); // this statement needs to be before first possible call of PrintUsage().
+        ERA::APP_NAME = StripFileExt(ERA::APP_EXE_NAME);
+        ERA::LOGGER_NAME = ERA::APP_NAME;
+        ERA::LOGFILE_NAME = ERA::APP_NAME + "Log.log";
 
-    InitDefaultLogger();
+        InitDefaultLogger();
 
-    GET_LOGGER;
-    logger.Info("Eratosthen logging has STARTED.");
+        logger.Info("Eratosthen logging has STARTED.");
 
-    cout.imbue(ERA::GetLoc());
+        cout.imbue(ERA::GetLoc());
 
-    CDefaultParser defaultParser;
-    CCommandLine cmd;
-    COptionsList options;
+        CDefaultParser defaultParser;
+        CCommandLine cmd;
+        COptionsList options;
 
-    DefineOptions(options);
+        DefineOptions(options);
 
-    if (argc < 2)
-    {
-        PrintUsage();
-        return 1;
-    }
-
-    if (!defaultParser.Parse(&options, &cmd, argv, argc))
-    {
-        cout << defaultParser.GetLastError() << endl;
-        PrintUsage();
-        return 1;
-    }
-
-    cout << endl << format("{} prime numbers generator/verifier {}.{}.{} x64 Copyright(c) 2024 - 2026 Andrey Romanchenko {}",
-        ERA::APP_NAME, ERA_VER_MAJOR, ERA_VER_MINOR, ERA_VER_PATCH, ERA_BUILD_DATE) << endl << endl;
-
-    if (cmd.HasOption(OPT_P))
-    {
-        Parameters::PRIMES_FILENAME = cmd.GetOptionValue(OPT_P, 0, Pre_Loaded_Primes_Filename);
-    }
-    if (cmd.HasOption(OPT_N))
-    {
-        Parameters::SAVEFILE = false; // do not save file, only generate primes
-    }
-    if (cmd.HasOption(OPT_O))
-    {
-        Parameters::OUTPUT_FOLDER = cmd.GetOptionValue(OPT_O);
-    }
-
-    // default threads value depends on requested operation: generate=1thr, verify=4thrs
-    Parameters::THREADS = cmd.HasOption(OPT_G) ? DEFAULT_G_THREADS : cmd.HasOption(OPT_V) ? DEFAULT_V_THREADS : DEFAULT_G_THREADS;
-    if (cmd.HasOption(OPT_T))
-    {
-        try
+        if (argc < 2)
         {
-            uint8_t threads = (uint8_t)stoul(cmd.GetOptionValue(OPT_T));
-            if ( (threads == 0) || (threads > 25) )
-                cout << "Number of threads (" << cmd.GetOptionValue(OPT_T) << ") is out of bounds (1...25). Using default value " << Parameters::THREADS << "." << endl;
-            else
-                Parameters::THREADS = threads;
-        }
-        catch (...) 
-        {
-            cout << "Incorrect number of threads specified '" << cmd.GetOptionValue(OPT_T) <<"'. Using default value " << Parameters::THREADS << "." << endl;
-        }
-    }
-
-   // uint64_t limitPrimes = 0; // unlimited by default. //CheckPrimes::DEFAULT_LIMIT_PRIMES; //TODO shall we allow suffixes K,M,G,T,P here?
-    if (cmd.HasOption(OPT_L))
-        try
-        {
-            Parameters::LIMIT_PRIMES = stoull(cmd.GetOptionValue(OPT_L));
-        }
-        catch (...)
-        {
-            cout << "Incorrect limit of numbers is specified '" << cmd.GetOptionValue(OPT_L) << "'. Using unlimited value as default." /* << CheckPrimes::DEFAULT_LIMIT_PRIMES << "." */ << endl << endl;
-            Parameters::LIMIT_PRIMES = DEFAULT_LIMIT_PRIMES; //CheckPrimes::DEFAULT_LIMIT_PRIMES;
-        }
-
-        //uint64_t offsetPrimes = CheckPrimes::DEFAULT_OFFSET; //TODO shall we allow suffixes K,M,G,T,P here?
-        if (cmd.HasOption(OPT_I))
-            try
-            {
-                Parameters::OFFSET_PRIMES = stoull(cmd.GetOptionValue(OPT_I));
-            }
-            catch (...)
-            {
-                cout << "Incorrect primes offset is specified '" << cmd.GetOptionValue(OPT_I) << "'. Using default value " << DEFAULT_OFFSET_PRIMES << "." << endl << endl;
-                Parameters::OFFSET_PRIMES = DEFAULT_OFFSET_PRIMES;
-            }
-
-    if (cmd.HasOption(OPT_H))
-    {
-        PrintUsage();
-    }
-
-    //////////////////////////////////////
-    // Processing commands here
-    //////////////////////////////////////
-
-
-        if (cmd.HasOption(OPT_G))
-        {
-            string alg    = cmd.GetOptionValue(OPT_G, 0);
-            string ftype  = cmd.GetOptionValue(OPT_G, 1);
-            string start  = cmd.GetOptionValue(OPT_G, 2);
-            string length = cmd.GetOptionValue(OPT_G, 3);
-
-            EratosthenesSieve sieve;
-            sieve.SetParams(alg, ftype, start, length);
-            sieve.Calculate();
-        }
-        else if (cmd.HasOption(OPT_V))
-        {
-            string firstArg = cmd.GetOptionValue(OPT_V, 0);
-            assert(firstArg.size() > 0);
-
-            if (firstArg[0] == '@') // file name specified, checking primes from file then
-            {
-               
-                //const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
-
-                if (cmd.GetOption(OPT_V)->GetArgs().size() > 1) // cannot mix file and primes in one command line for -v, + only one file can be specified
-                    throw invalid_argument("Command -v: Cannot mix file name and primes in one command line. also only one file can be specified for this command.");
-            
-                //uint64_t numPrimesToCheck = Parameters::LIMIT_PRIMES == 0 ? DEF_PRIMES_TO_CHECK : Parameters::LIMIT_PRIMES;
-                CheckPrimes pr(Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
-                pr.Start(firstArg.substr(1), Parameters::THREADS);
-
-            }
-            else // check list of primes from command line
-            {
-                auto& vs = cmd.GetOptionValues(OPT_V);
-
-                CheckPrimes::CheckPrimesArray(vs, cmd.HasOption(OPT_B));
-            }
-        }
-        else if (cmd.HasOption(OPT_C))
-        {
-            string fromTo = cmd.GetOptionValue(OPT_C, 0);
-            string filename = cmd.GetOptionValue(OPT_C, 1);
-
-            FileConverter fc;
-            fc.Convert(fromTo, filename, Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
-        }
-        else
-        {
-            // unknown option, show help
-            cout << "No any commands specified in command line. Exiting." << endl;
             PrintUsage();
             return 1;
         }
 
-        cout << "Done" << endl;
-        logger.Info("Eratosthen logging has FINISHED.");
+        if (!defaultParser.Parse(&options, &cmd, argv, argc))
+        {
+            cout << defaultParser.GetLastError() << endl;
+            PrintUsage();
+            return 1;
+        }
 
-        _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
-        _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
-        if (_CrtMemDifference(&s3, &s1, &s2)) _CrtMemDumpStatistics(&s3); // Dump memory statistics excluding global variables
+        cout << endl << format("{} prime numbers generator/verifier {}.{}.{} x64 Copyright(c) 2024 - 2026 Andrey Romanchenko {}",
+            ERA::APP_NAME, ERA_VER_MAJOR, ERA_VER_MINOR, ERA_VER_PATCH, ERA_BUILD_DATE) << endl << endl;
 
-        return 0;
+        if (cmd.HasOption(OPT_P))
+        {
+            Parameters::PRIMES_FILENAME = cmd.GetOptionValue(OPT_P, 0, Pre_Loaded_Primes_Filename);
+        }
+        if (cmd.HasOption(OPT_N))
+        {
+            Parameters::SAVEFILE = false; // do not save file, only generate primes
+        }
+        if (cmd.HasOption(OPT_O))
+        {
+            Parameters::OUTPUT_FOLDER = cmd.GetOptionValue(OPT_O);
+        }
+
+        // default threads value depends on requested operation: generate=1thr, verify=4thrs
+        Parameters::THREADS = cmd.HasOption(OPT_G) ? DEFAULT_G_THREADS : cmd.HasOption(OPT_V) ? DEFAULT_V_THREADS : DEFAULT_G_THREADS;
+        if (cmd.HasOption(OPT_T))
+        {
+            try
+            {
+                uint8_t threads = (uint8_t)stoul(cmd.GetOptionValue(OPT_T));
+                if ((threads == 0) || (threads > 25))
+                    cout << "Number of threads (" << cmd.GetOptionValue(OPT_T) << ") is out of bounds (1...25). Using default value " << Parameters::THREADS << "." << endl;
+                else
+                    Parameters::THREADS = threads;
+            }
+            catch (...)
+            {
+                cout << "Incorrect number of threads specified '" << cmd.GetOptionValue(OPT_T) << "'. Using default value " << Parameters::THREADS << "." << endl;
+            }
+        }
+
+        // uint64_t limitPrimes = 0; // unlimited by default. //CheckPrimes::DEFAULT_LIMIT_PRIMES; //TODO shall we allow suffixes K,M,G,T,P here?
+        if (cmd.HasOption(OPT_L))
+            try
+            {
+                Parameters::LIMIT_PRIMES = stoull(cmd.GetOptionValue(OPT_L));
+            }
+            catch (...)
+            {
+                cout << "Incorrect limit of numbers is specified '" << cmd.GetOptionValue(OPT_L) << "'. Using unlimited value as default." /* << CheckPrimes::DEFAULT_LIMIT_PRIMES << "." */ << endl << endl;
+                Parameters::LIMIT_PRIMES = DEFAULT_LIMIT_PRIMES; //CheckPrimes::DEFAULT_LIMIT_PRIMES;
+            }
+
+            //uint64_t offsetPrimes = CheckPrimes::DEFAULT_OFFSET; //TODO shall we allow suffixes K,M,G,T,P here?
+            if (cmd.HasOption(OPT_I))
+                try
+                {
+                    Parameters::OFFSET_PRIMES = stoull(cmd.GetOptionValue(OPT_I));
+                }
+                catch (...)
+                {
+                    cout << "Incorrect primes offset is specified '" << cmd.GetOptionValue(OPT_I) << "'. Using default value " << DEFAULT_OFFSET_PRIMES << "." << endl << endl;
+                    Parameters::OFFSET_PRIMES = DEFAULT_OFFSET_PRIMES;
+                }
+
+                if (cmd.HasOption(OPT_H))
+                {
+                    PrintUsage();
+                }
+
+                //////////////////////////////////////
+                // Processing commands here
+                //////////////////////////////////////
+
+
+                if (cmd.HasOption(OPT_G))
+                {
+                    string alg = cmd.GetOptionValue(OPT_G, 0);
+                    string ftype = cmd.GetOptionValue(OPT_G, 1);
+                    string start = cmd.GetOptionValue(OPT_G, 2);
+                    string length = cmd.GetOptionValue(OPT_G, 3);
+
+                    EratosthenesSieve sieve;
+                    sieve.SetParams(alg, ftype, start, length);
+                    sieve.Calculate();
+                }
+                else if (cmd.HasOption(OPT_V))
+                {
+                    string firstArg = cmd.GetOptionValue(OPT_V, 0);
+                    assert(firstArg.size() > 0);
+
+                    if (firstArg[0] == '@') // file name specified, checking primes from file then
+                    {
+
+                        //const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
+
+                        if (cmd.GetOption(OPT_V)->GetArgs().size() > 1) // cannot mix file and primes in one command line for -v, + only one file can be specified
+                            throw invalid_argument("Command -v: Cannot mix file name and primes in one command line. also only one file can be specified for this command.");
+
+                        //uint64_t numPrimesToCheck = Parameters::LIMIT_PRIMES == 0 ? DEF_PRIMES_TO_CHECK : Parameters::LIMIT_PRIMES;
+                        CheckPrimes pr(Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
+                        pr.Start(firstArg.substr(1), Parameters::THREADS);
+
+                    }
+                    else // check list of primes from command line
+                    {
+                        auto& vs = cmd.GetOptionValues(OPT_V);
+
+                        CheckPrimes pr;
+                        pr.CheckPrimesArray(vs, cmd.HasOption(OPT_B));
+                    }
+                }
+                else if (cmd.HasOption(OPT_C))
+                {
+                    string fromTo = cmd.GetOptionValue(OPT_C, 0);
+                    string filename = cmd.GetOptionValue(OPT_C, 1);
+
+                    FileConverter fc;
+                    fc.Convert(fromTo, filename, Parameters::LIMIT_PRIMES, Parameters::OFFSET_PRIMES);
+                }
+                else
+                {
+                    // unknown option, show help
+                    cout << "No any commands specified in command line. Exiting." << endl;
+                    PrintUsage();
+                    return 1;
+                }
+
+                cout << "Done" << endl;
+                logger.Info("Eratosthen logging has FINISHED.");
+
+                _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
+                _CrtMemCheckpoint(&s2); // Take a snapshot at the end of main()
+                if (_CrtMemDifference(&s3, &s1, &s2)) _CrtMemDumpStatistics(&s3); // Dump memory statistics excluding global variables
+
+                return 0;
     }
-    /*catch (invalid_cmd_option& e)
-    {
-        cout << endl << e.what() << endl << endl;
-        PrintUsage();
-    }*/
     catch (ios_base::failure& e)
     {
         cout << endl;
         cout << e.what() << endl << endl;
         cout << "Error code: " << e.code() << endl;
+        logger.ErrorFmt("Error encountered: {}, error code: {}", e.what(), e.code().value());
     }
     catch (invalid_argument& e)
     {
         cout << endl;
         cout << e.what() << endl << endl;
+        logger.ErrorFmt("Invalid argument error has encountered: {}", e.what());
     }
     catch (exception& e)
     {
         cout << endl << e.what() << endl << endl;
         cout << "Run " << ERA::APP_EXE_NAME << " -h to get more info about command line parameters." << endl;
+        logger.ErrorFmt("Exception has beed caught: {}", e.what());
+
     }
     catch (...)
     {
         cout << "UNKNOWN error has been met. Exiting" << endl;
         cout << "Run " << ERA::APP_EXE_NAME << " -h to get more info about command line parameters." << endl;
+        logger.Error("UNKNOWN ERROR error has encountered.");
     }
 
     return 1;

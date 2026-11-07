@@ -21,84 +21,87 @@
     <ClCompile Include="Eratosthen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="external\cli\CommandLine.cpp">
+    <ClCompile Include="..\..\external\cli\CommandLine.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
-    <ClCompile Include="external\cli\DefaultParser.cpp">
+    <ClCompile Include="..\..\external\cli\DefaultParser.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
-    <ClCompile Include="external\cli\HelpFormatter.cpp">
+    <ClCompile Include="..\..\external\cli\HelpFormatter.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
-    <ClCompile Include="external\cli\Option.cpp">
+    <ClCompile Include="..\..\external\cli\Option.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
-    <ClCompile Include="external\cli\OptionsList.cpp">
+    <ClCompile Include="..\..\external\cli\OptionsList.cpp">
       <Filter>Source Files\CLI</Filter>
     </ClCompile>
-    <ClCompile Include="external\utils\src\PrimesFIO.cpp">
+    <ClCompile Include="..\..\external\utils\src\PrimesFIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CheckPrimes.cpp">
+    <ClCompile Include="..\..\src\CheckPrimes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EratosthenesSieve.cpp">
+    <ClCompile Include="..\..\src\EratosthenesSieve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\FileConverter.cpp">
+    <ClCompile Include="..\..\src\FileConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Parameters.cpp">
+    <ClCompile Include="..\..\src\Parameters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SegmentedArray.cpp">
+    <ClCompile Include="..\..\src\SegmentedArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils.cpp">
+    <ClCompile Include="..\..\src\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BigInt.cpp">
+    <ClCompile Include="..\..\src\BigInt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="external\utils\src\string_utils.cpp">
+    <ClCompile Include="..\..\external\utils\src\string_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\CheckPrimes.h">
+    <ClInclude Include="..\..\include\CheckPrimes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CriticalSection.h">
+    <ClInclude Include="..\..\include\CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Debug.h">
+    <ClInclude Include="..\..\include\Debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\EratosthenesSieve.h">
+    <ClInclude Include="..\..\include\EratosthenesSieve.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\FileConverter.h">
+    <ClInclude Include="..\..\include\FileConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Parameters.h">
+    <ClInclude Include="..\..\include\Parameters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ProgressPrinter.h">
+    <ClInclude Include="..\..\include\ProgressPrinter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\SegmentedArray.h">
+    <ClInclude Include="..\..\include\SegmentedArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Utils.h">
+    <ClInclude Include="..\..\include\Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Version.h">
+    <ClInclude Include="..\..\external\utils\include\string_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="external\utils\include\string_utils.h">
+    <ClInclude Include="..\..\external\utils\include\Ticks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="external\utils\include\Ticks.h">
+    <ClInclude Include="..\..\include\GenericBigInt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -59,7 +59,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;LOGENGINE_HEADER_ONLY;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external;$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\external/utils/include;$(ProjectDir)..\..\external;$(ProjectDir)..\..\include</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -70,6 +70,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(IntDir)ttmathuint_x86_64_msvc_debug.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -80,7 +81,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;LOGENGINE_HEADER_ONLY;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)external/utils/include;$(ProjectDir)external;$(ProjectDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\external/utils/include;$(ProjectDir)..\..\external;$(ProjectDir)..\..\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -91,38 +92,40 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(IntDir)ttmathuint_x86_64_msvc_release.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Eratosthen.cpp" />
-    <ClCompile Include="external\cli\CommandLine.cpp" />
-    <ClCompile Include="external\cli\DefaultParser.cpp" />
-    <ClCompile Include="external\cli\HelpFormatter.cpp" />
-    <ClCompile Include="external\cli\Option.cpp" />
-    <ClCompile Include="external\cli\OptionsList.cpp" />
-    <ClCompile Include="external\utils\src\PrimesFIO.cpp" />
-    <ClCompile Include="external\utils\src\string_utils.cpp" />
-    <ClCompile Include="src\BigInt.cpp" />
-    <ClCompile Include="src\CheckPrimes.cpp" />
-    <ClCompile Include="src\EratosthenesSieve.cpp" />
-    <ClCompile Include="src\FileConverter.cpp" />
-    <ClCompile Include="src\Parameters.cpp" />
-    <ClCompile Include="src\SegmentedArray.cpp" />
-    <ClCompile Include="src\Utils.cpp" />
+    <ClCompile Include="..\..\external\cli\CommandLine.cpp" />
+    <ClCompile Include="..\..\external\cli\DefaultParser.cpp" />
+    <ClCompile Include="..\..\external\cli\HelpFormatter.cpp" />
+    <ClCompile Include="..\..\external\cli\Option.cpp" />
+    <ClCompile Include="..\..\external\cli\OptionsList.cpp" />
+    <ClCompile Include="..\..\external\utils\src\PrimesFIO.cpp" />
+    <ClCompile Include="..\..\external\utils\src\string_utils.cpp" />
+    <ClCompile Include="..\..\src\BigInt.cpp" />
+    <ClCompile Include="..\..\src\CheckPrimes.cpp" />
+    <ClCompile Include="..\..\src\EratosthenesSieve.cpp" />
+    <ClCompile Include="..\..\src\FileConverter.cpp" />
+    <ClCompile Include="..\..\src\Parameters.cpp" />
+    <ClCompile Include="..\..\src\SegmentedArray.cpp" />
+    <ClCompile Include="..\..\src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="external\utils\include\string_utils.h" />
-    <ClInclude Include="external\utils\include\Ticks.h" />
-    <ClInclude Include="include\CheckPrimes.h" />
-    <ClInclude Include="include\CriticalSection.h" />
-    <ClInclude Include="include\Debug.h" />
-    <ClInclude Include="include\EratosthenesSieve.h" />
-    <ClInclude Include="include\FileConverter.h" />
-    <ClInclude Include="include\Parameters.h" />
-    <ClInclude Include="include\ProgressPrinter.h" />
-    <ClInclude Include="include\SegmentedArray.h" />
-    <ClInclude Include="include\Utils.h" />
-    <ClInclude Include="include\Version.h" />
+    <ClInclude Include="..\..\external\utils\include\string_utils.h" />
+    <ClInclude Include="..\..\external\utils\include\Ticks.h" />
+    <ClInclude Include="..\..\include\CheckPrimes.h" />
+    <ClInclude Include="..\..\include\CriticalSection.h" />
+    <ClInclude Include="..\..\include\Debug.h" />
+    <ClInclude Include="..\..\include\EratosthenesSieve.h" />
+    <ClInclude Include="..\..\include\FileConverter.h" />
+    <ClInclude Include="..\..\include\GenericBigInt.h" />
+    <ClInclude Include="..\..\include\Parameters.h" />
+    <ClInclude Include="..\..\include\ProgressPrinter.h" />
+    <ClInclude Include="..\..\include\SegmentedArray.h" />
+    <ClInclude Include="..\..\include\Utils.h" />
+    <ClInclude Include="..\..\include\Version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
