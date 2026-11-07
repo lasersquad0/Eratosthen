@@ -98,8 +98,8 @@ private:
 	//uint64_t saveAsBINDiffVarOptimumMode(uint64_t start, SegmentedArray* sarr, std::string& outputFilename, PrimeFromIndexPred pred);
 	
 	//uint32_t loadPrimesFromTXTFile(string filename, uint64_t* primes, uint64_t stopPrime);
-	uint32_t loadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
-	uint32_t loadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
+	//uint32_t loadPrimesFromTXTFile(std::string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime);
+	//uint32_t loadPrimesFromBINDiffVar(std::string& filename, uint64_t* primes, size_t len, uint64_t stopPrime);
 	void loadPrimes();
 
 	std::string getOutputFilename();
