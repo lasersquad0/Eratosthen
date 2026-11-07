@@ -173,9 +173,6 @@ int main(int argc, char* argv[])
 
                     if (firstArg[0] == '@') // file name specified, checking primes from file then
                     {
-
-                        //const uint64_t DEF_PRIMES_TO_CHECK = 200'000'000;
-
                         if (cmd.GetOption(OPT_V)->GetArgs().size() > 1) // cannot mix file and primes in one command line for -v, + only one file can be specified
                             throw invalid_argument("Command -v: Cannot mix file name and primes in one command line. also only one file can be specified for this command.");
 
