@@ -61,8 +61,8 @@ public:
 
 	CheckPrimes(size_t limitPrimes, size_t offset)//: syncout(std::cout)
 	{
-		assert(limitPrimes > 0);
-		assert(offset < limitPrimes);
+		//assert(limitPrimes > 0);
+		//assert(offset < limitPrimes);
 		m_capacity = limitPrimes == 0 ? MAX_PRIMES_TO_STORE : std::min(limitPrimes, MAX_PRIMES_TO_STORE);
 		m_primesToVerify = static_cast<uint64_t*>(allocate_aligned(std::hardware_destructive_interference_size, m_capacity*sizeof(uint64_t)));
 		assert(m_primesToVerify);
