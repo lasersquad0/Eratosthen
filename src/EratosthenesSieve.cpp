@@ -7,7 +7,7 @@
 #include "Utils.h"
 #include "Ticks.h"
 #include "Parameters.h"
-#include "PrimesFIO.h" // for var_len_encode and var_len_decode functions
+//#include "PrimesFIO.h" // for var_len_encode and var_len_decode functions
 
 using namespace std;
 
@@ -236,15 +236,14 @@ void EratosthenesSieve::FindPrimesInThreads2(uint32_t numThreads, StrikeoutCompo
 void EratosthenesSieve::loadPrimes()
 {
     Ticks::Start("preload");
-    //auto start1 = chrono::high_resolution_clock::now();
 
-    cout << format("{:<{}}:'{}'", "Pre-calc primes file", F_WIDTH, Parameters::PRIMES_FILENAME) << endl;
+    cout << format("{:<{}}:'{}'", "Pre-loaded primes file", F_WIDTH, Parameters::PRIMES_FILENAME) << endl;
 
-    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realStart + m_realLength)); // max prime num in a specified range 
+    uint64_t maxPrimeToLoad = (uint64_t)(sqrt(m_realEnd)); // max prime num in a specified range 
     uint64_t numPrimesLessThan = (uint64_t)((double)maxPrimeToLoad / log(maxPrimeToLoad)); // approx number of prime numbers in a range 
     cout << format("{:<{}}: ", "Need for calculation", F_WIDTH) << numPrimesLessThan << " primes";
     cout << " (approximate number of primes in a range from 2 to " << maxPrimeToLoad << "=sqrt(" << m_realEnd << ") )" << endl;
-    //cout << "There are *approximately* " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << " = sqrt(" << m_realStart + m_realLength << ") we need for calculations." << endl;
+    //cout << "There are *approximately* " << numPrimesLessThan << " primes less than " << maxPrimeToLoad << " = sqrt(" << m_realEnd << ") we need for calculations." << endl;
 
     // read at least 1000 primes from file because approximate formula for numPrimesLessThan does not work well for low numbers
     uint32_t prldPrimesSize = std::max(1000u, (uint32_t)(numPrimesLessThan * 1.2)); // give extra 20% for primes array size since formular above is not presize
@@ -258,13 +257,14 @@ void EratosthenesSieve::loadPrimes()
     switch (ft)
     {
     case PrimesFIO::PFF::bindiffvar:
-        m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        m_readPrimes = LoadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
     case PrimesFIO::PFF::txt:
-        m_readPrimes = loadPrimesFromTXTFile(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        m_readPrimes = LoadPrimesFromTXTFile(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
         break;
     default:
-        m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
+        throw invalid_argument(format("File format {} ({}) is not recognized or not supported for pre-loaded primes.", PFFToStr(ft), Parameters::PRIMES_FILENAME));
+        //m_readPrimes = loadPrimesFromBINDiffVar(Parameters::PRIMES_FILENAME, m_prldPrimes, prldPrimesSize, maxPrimeToLoad);
     }
 
     cout << format("{:<{}}: ", "Primes actually loaded", F_WIDTH) << m_readPrimes << endl;
@@ -272,78 +272,7 @@ void EratosthenesSieve::loadPrimes()
     if (m_prldPrimes[m_readPrimes - 1] < maxPrimeToLoad) // not enough primes in file, show warning 
         cout << "*WARNING*: There might be not enough primes in a file '" << Parameters::PRIMES_FILENAME << "' for calculation new primes!" << endl;
 
-    //auto stop = chrono::high_resolution_clock::now();
-    //cout << format("{:<{}}: {}", "Primes load time", F_WIDTH, MillisecToStr<string>(chrono::duration_cast<chrono::milliseconds>(stop - start1).count())) << endl;
     cout << format("{:<{}}: {}", "Primes load time", F_WIDTH, MillisecToStr<string>(Ticks::Finish("preload"))) << endl;
-}
-
-
-//Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
-uint32_t EratosthenesSieve::loadPrimesFromBINDiffVar(string& filename, uint64_t* primes, size_t len, uint64_t stopPrime)
-{
-    fstream f;
-    f.exceptions(ifstream::failbit | ifstream::badbit);
-    f.open(filename, ios::in | ios::binary);
-    f.exceptions(ifstream::badbit);
-
-    uint64_t diff;
-    uint64_t lastPrime = 0;
-    uint8_t buf[9];
-    size_t maxSize;
-
-    uint32_t cnt = 0;
-    while (cnt < len)
-    {
-        maxSize = 0;
-
-        while (true)
-        {
-            f.read((char*)(buf + maxSize), 1);
-            if (f.eof()) break;
-            if ((buf[maxSize++] & 0x80) == 0) break;
-        }
-
-        if (f.eof()) break;
-
-        [[maybe_unused]] size_t res = var_len_decode(buf, maxSize, &diff);
-        
-        assert(res > 0);
-
-        if (lastPrime > 2) diff *= 2; // multiply by 2 все: кроме первого числа(lastPrime==0), и когда lastPrime==2
-
-        primes[cnt] = diff + lastPrime;
-        lastPrime = primes[cnt++];
-
-        if (lastPrime > stopPrime) break;
-    }
-
-    return cnt;
-}
-
-//Reading either entire file with primes or loading up to len primes, or till we met prime that greater than stopPrime value
-uint32_t EratosthenesSieve::loadPrimesFromTXTFile(string& filename, uint64_t* primes, uint32_t len, uint64_t stopPrime)
-{
-    fstream f;
-    f.exceptions(/*ifstream::failbit |*/ ifstream::badbit);
-    f.open(filename, ios::in);
-
-    string line;
-
-    uint32_t cnt = 0;
-    while (cnt < len)
-    {
-        getline(f, line, ',');
-        if (f.eof()) break;
-
-        primes[cnt] = atoll(line.c_str());
-
-        if (primes[cnt] > stopPrime) break;
-        cnt++;
-    }
-
-    f.close();
-
-    return cnt;
 }
 
 
@@ -2130,7 +2059,7 @@ uint64_t EratosthenesSieve::saveAsTXTOptimumMode(SegmentedArray* sarr, string& o
             //prime = pred(i, lastPrime); //2 * i + 1;
             // sometimes prime may be out of requested range
             // add to file only primes that fit into range
-            //if ((prime >= m_realStart) && (prime < m_realStart + m_realLength))
+            //if ((prime >= m_realStart) && (prime < m_realEnd))
             //{
                 cntPrimes++;
                 s.append(to_string(pred(i, lastPrime)));
@@ -2336,7 +2265,7 @@ uint64_t EratosthenesSieve::saveAsBINDiffVarOptimumMode(uint64_t start, Segmente
             prime = pred(i); // (i << 1) + 1; //2 * i + 1;
 
             // sometimes prime may be out of requested range, save to file only primes that fit into range
-            if ((prime < m_realStart) || (prime >= m_realStart + m_realLength))
+            if ((prime < m_realStart) || (prime >= m_realEnd))
                 continue;
 
             cntPrimes++;
