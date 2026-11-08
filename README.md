@@ -4,6 +4,12 @@
 - Saves generates primes into files of 5 formats (either text or binary).
 - Checks numbers for primality.
 - Converts files with primes from one format to another.
+## Author
+Author: Andrey Romanchenko (lasersquad@gmail.com)
+
+Web site: https://github.com/lasersquad0/Eratosthen
+
+Questions and feedback: https://github.com/lasersquad0/Eratosthen/discussions
 
 ## Generating primes
 
